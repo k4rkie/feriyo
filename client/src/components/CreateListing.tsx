@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react"
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline"
+import React, { useEffect, useState } from "react";
+import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 
 interface CreateListingProps {
   isOpen: boolean;
@@ -47,7 +47,9 @@ function CreateListing({ isOpen, onClose }: CreateListingProps) {
       onClick={handleBackdropClick}
     >
       <div className="w-full max-w-4xl px-6 py-6 rounded-md bg-[#1A1A1A] text-[#E5E5E5] placeholder:text-[#A1A1A1]">
-        <h2 className="text-2xl font-bold mb-6 text-center">Create a Listing</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">
+          Create a Listing
+        </h2>
         <form className="grid grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
@@ -63,7 +65,10 @@ function CreateListing({ isOpen, onClose }: CreateListingProps) {
               />
             </div>
             <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-1">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium mb-1"
+              >
                 Description
               </label>
               <textarea
@@ -77,20 +82,42 @@ function CreateListing({ isOpen, onClose }: CreateListingProps) {
               <label htmlFor="price" className="block text-sm font-medium mb-1">
                 Price
               </label>
-              <input
-                type="number"
-                id="price"
-                placeholder="Enter price"
-                min={0}
-                className="w-full px-4 py-2 rounded-md border border-[#2A2A2A] bg-[#1A1A1A] text-[#E5E5E5] placeholder:text-[#A1A1A1]  appearance-none focus:outline-none focus:ring-0"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#A1A1A1]">
+                  NRP
+                </span>
+                <input
+                  type="number"
+                  id="price"
+                  placeholder="Enter price"
+                  min={0}
+                  className="w-full pl-12 pr-4 py-2 rounded-md border border-[#2A2A2A] bg-[#1A1A1A] text-[#E5E5E5] placeholder:text-[#A1A1A1] appearance-none focus:outline-none focus:ring-0"
+                />
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="category"
+                className="block text-sm font-medium mb-1"
+              >
+                Category
+              </label>
+              <select
+                id="category"
+                defaultValue="Others"
+                className="w-full px-4 py-2 rounded-md border border-[#2A2A2A] bg-[#1A1A1A] text-[#E5E5E5] placeholder:text-[#A1A1A1] appearance-none focus:outline-none focus:ring-0"
+              >
+                <option>Electronics</option>
+                <option>Education</option>
+                <option>Fashion</option>
+                <option>Furniture</option>
+                <option>Others</option>
+              </select>
             </div>
           </div>
 
           <div className="flex flex-col">
-            <label className="block text-sm font-medium mb-2">
-              Images
-            </label>
+            <label className="block text-sm font-medium mb-2">Images</label>
             <input
               type="file"
               id="images"
@@ -116,8 +143,12 @@ function CreateListing({ isOpen, onClose }: CreateListingProps) {
               ) : (
                 <div className="text-center">
                   <ArrowUpTrayIcon className="w-10 h-10 mx-auto text-[#2ACFCF]" />
-                  <p className="text-lg font-medium text-[#E5E5E5]">Browse images</p>
-                  <p className="text-sm text-[#A1A1A1] mt-2">Click to select files</p>
+                  <p className="text-lg font-medium text-[#E5E5E5]">
+                    Browse images
+                  </p>
+                  <p className="text-sm text-[#A1A1A1] mt-2">
+                    Click to select files
+                  </p>
                 </div>
               )}
             </div>
@@ -141,7 +172,7 @@ function CreateListing({ isOpen, onClose }: CreateListingProps) {
         </form>
       </div>
     </div>
-  )
+  );
 }
 
-export default CreateListing
+export default CreateListing;

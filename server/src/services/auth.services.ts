@@ -1,9 +1,6 @@
 import { db } from "../db/db.js";
 import { usersTable } from "../db/schema.js";
-import {
-  signupDataInput,
-  loginDataInput,
-} from "../validators/user.validator.js";
+import type { signupDataInput, loginDataInput } from "@feriyo/shared";
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { eq, or } from "drizzle-orm";
@@ -22,7 +19,7 @@ const signUpUser = async (signUpData: signupDataInput) => {
     const errMessage =
       existingUser.email === email
         ? "User with that email already exists"
-        : "Username alrady taken";
+        : "Username already taken";
     throw new Error(errMessage);
   }
 
@@ -41,7 +38,10 @@ const signUpUser = async (signUpData: signupDataInput) => {
       email: usersTable.email,
     });
 
-  return newUser;
+  const accessToken = generateAccessToken(newUser.userId);
+  const refreshToken = generateRefreshToken(newUser.userId);
+
+  return { newUser, accessToken, refreshToken };
 };
 
 const loginUser = async (loginData: loginDataInput) => {
@@ -82,4 +82,17 @@ const loginUser = async (loginData: loginDataInput) => {
   return { loggedInUser, accessToken, refreshToken };
 };
 
-export { signUpUser, loginUser };
+const getUserInfo = async (userId: number) => {
+  const [user] = await db
+    .select({
+      userId: usersTable.userId,
+      username: usersTable.username,
+      email: usersTable.email,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.userId, userId))
+    .limit(1);
+  return user;
+};
+
+export { signUpUser, loginUser, getUserInfo };

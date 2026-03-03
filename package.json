@@ -1,0 +1,27 @@
+{
+  "name": "feriyo-root",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Feriyo is a second-hand marketplace platform where users can list, browse, and purchase used items.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/k4rkie/Feriyo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "bugs": {
+    "url": "https://github.com/k4rkie/Feriyo/issues"
+  },
+  "homepage": "https://github.com/k4rkie/Feriyo#readme"
+}
