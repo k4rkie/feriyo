@@ -49,8 +49,8 @@ const listingsTable = pgTable(
     title: varchar("title", { length: 100 }).notNull(),
     description: text("description"),
     price: integer("price").notNull(),
-    category: categoryEnum(),
-    condition: conditionEnum(),
+    category: categoryEnum().notNull(),
+    condition: conditionEnum().notNull(),
     location: varchar("location").notNull(),
     isSold: boolean("is_sold").default(false).notNull(),
     imageUrls: text("image_urls")

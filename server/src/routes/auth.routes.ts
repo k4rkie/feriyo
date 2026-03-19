@@ -1,18 +1,16 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import {
   signupController,
   loginController,
   refreshController,
   logoutController,
-  meController,
 } from "../controllers/auth.controllers.js";
 
 const authRouter = Router();
 
-authRouter.post("/signup", signupController);
-authRouter.post("/login", loginController);
-authRouter.post("/logout", logoutController);
-authRouter.get("/refresh", refreshController);
-authRouter.get("/me", meController);
+authRouter.post("/signup", express.json(), signupController);
+authRouter.post("/login", express.json(), loginController);
+authRouter.post("/logout", express.json(), logoutController);
+authRouter.get("/refresh", express.json(), refreshController);
 
 export default authRouter;

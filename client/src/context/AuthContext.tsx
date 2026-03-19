@@ -32,6 +32,7 @@ function AuthProvider({ children }: AuthProviderPropType) {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     async function initializeAuth() {
       try {
         const response = await fetch("http://localhost:8080/api/auth/refresh", {
@@ -39,26 +40,14 @@ function AuthProvider({ children }: AuthProviderPropType) {
           credentials: "include",
         });
         if (!response.ok) {
-          throw new Error("Refresh Failed");
+          console.warn("Refresh failed, keeping user state unchanged");
+          return;
         }
-
         const result = await response.json();
-        const newAccessToken = result.data.accessToken;
-        setAccessToken(newAccessToken);
+        if (!isMounted) return;
 
-        const userResponse = await fetch("http://localhost:8080/api/auth/me", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${newAccessToken}`,
-          },
-        });
-
-        if (!userResponse.ok) {
-          throw new Error("Fetching user failed");
-        }
-
-        const userData = await userResponse.json();
-        setUser(userData.data.user);
+        setAccessToken(result.data.accessToken);
+        setUser(result.data.user);
       } catch (error) {
         setUser(null);
         setAccessToken(null);
@@ -67,6 +56,10 @@ function AuthProvider({ children }: AuthProviderPropType) {
       }
     }
     initializeAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   function login(userData: User, token: string) {
@@ -75,11 +68,10 @@ function AuthProvider({ children }: AuthProviderPropType) {
   }
 
   async function logout() {
-    const response = await fetch("http://localhost:8080/api/auth/logout", {
+    await fetch("http://localhost:8080/api/auth/logout", {
       method: "POST",
       credentials: "include",
     });
-
     setUser(null);
     setAccessToken(null);
   }

@@ -30,7 +30,7 @@ const signupController = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 4 * 7 * 24 * 60 * 60 * 1000,
     });
     return res.status(201).json({
       success: true,
@@ -85,7 +85,7 @@ const loginController = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 4 * 7 * 24 * 60 * 60 * 1000,
     });
     return res.status(200).json({
       success: true,
@@ -118,7 +118,7 @@ const loginController = async (req: Request, res: Response) => {
   }
 };
 
-const refreshController = (req: Request, res: Response) => {
+const refreshController = async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
 
   if (!refreshToken) {
@@ -144,10 +144,13 @@ const refreshController = (req: Request, res: Response) => {
 
     const accessToken = generateAccessToken(userId);
 
+    const user = await getUserInfo(userId);
+
     return res.status(200).json({
       success: true,
       message: "Access Token refreshed",
       data: {
+        user,
         accessToken,
       },
       error: null,
@@ -178,49 +181,9 @@ const logoutController = (req: Request, res: Response) => {
   });
 };
 
-const meController = async (req: Request, res: Response) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthenticated: No Bearer token provided",
-      data: null,
-      error: "MISSING_TOKEN",
-    });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    const decodedPayload = jwt.verify(
-      token,
-      process.env.ACCESS_TOKEN_SECRET!,
-    ) as JwtPayload;
-    const userId = Number(decodedPayload.sub);
-
-    const user = await getUserInfo(userId);
-
-    return res.status(200).json({
-      success: true,
-      message: "User logged in successfully",
-      data: { user },
-      error: null,
-    });
-  } catch (error: any) {
-    return res.status(401).json({
-      success: false,
-      message: "Session expired or invalid token",
-      data: null,
-      error: error.message,
-    });
-  }
-};
-
 export {
   signupController,
   loginController,
   refreshController,
   logoutController,
-  meController,
 };
