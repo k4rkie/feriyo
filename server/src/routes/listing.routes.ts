@@ -6,6 +6,7 @@ import {
   getListingByIdController,
   deleteListingContorller,
   editListingController,
+  getMyListings,
 } from "../controllers/listing.controllers.js";
 import multer from "multer";
 import { protect } from "../middlewares/auth.middleware.js";
@@ -31,6 +32,7 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 const listingRouter = Router();
 
 listingRouter.get("", getListingsController);
+listingRouter.get("/me", protect, getMyListings);
 listingRouter.post(
   "",
   protect,

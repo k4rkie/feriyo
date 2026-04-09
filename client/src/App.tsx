@@ -10,6 +10,7 @@ import ListingDetail from "./pages/ListingDetail";
 import Landing from "./pages/Landing";
 import UserProfile from "./pages/UserProfile";
 import EditListing from "./pages/EditListing";
+import MyListings from "./pages/MyListings";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route path="listings/edit/:listingId" element={<EditListing />} />
             <Route path="listings/:listingId" element={<ListingDetail />} />
             <Route path="profile" element={<UserProfile />} />
+            <Route path="my-listings" element={<MyListings />} />
           </Route>
         </Routes>
       </AuthProvider>

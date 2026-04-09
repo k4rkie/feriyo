@@ -5,6 +5,7 @@ import {
   editListing,
   getListingById,
   getListings,
+  myListings,
 } from "../services/listing.services.js";
 import multer from "multer";
 import {
@@ -55,7 +56,6 @@ const createListingContorller = async (
       error: fieldErrors,
     });
   }
-  console.log(req.files);
   try {
     const new_listing = await createListing(result.data, userId);
     return res.status(201).json({
@@ -114,7 +114,6 @@ const editListingController = async (
   const listingId = Number(req.params.listingId);
   const userId = req.user!.userId;
 
-  console.log(req.body);
   const isSold = req.body.isSold === "true" || req.body.isSold === true;
 
   let removedListingImages = req.body.removedListingImages;
@@ -124,8 +123,6 @@ const editListingController = async (
     removedListingImages = [removedListingImages];
   }
   req.body = { ...req.body, isSold, removedListingImages };
-
-  console.log(req.body);
 
   const requestData = { ...req.body, newListingImages: req.files };
   const result = editListingSchema.safeParse(requestData);
@@ -139,7 +136,6 @@ const editListingController = async (
       error: fieldErrors,
     });
   }
-  console.log(req.files);
   try {
     const editedListing = await editListing(result.data, listingId, userId);
     return res.status(201).json({
@@ -209,7 +205,39 @@ const deleteListingContorller = async (
         error: error.message,
       });
     }
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      data: null,
+      error: null,
+    });
+  }
+};
 
+const getMyListings = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const userId = req.user?.userId;
+  try {
+    const listings = await myListings(userId!);
+
+    return res.status(200).json({
+      success: true,
+      message: "Listings fetched successfully",
+      data: listings,
+      error: null,
+    });
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: "Listing Fetch Error",
+        data: null,
+        error: error.message,
+      });
+    }
     return res.status(500).json({
       success: false,
       message: "Something went wrong",
@@ -225,4 +253,5 @@ export {
   getListingByIdController,
   editListingController,
   deleteListingContorller,
+  getMyListings,
 };

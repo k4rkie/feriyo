@@ -207,10 +207,27 @@ const deleteListing = async (listingId: number, userId: number) => {
   return true;
 };
 
+const myListings = async (userId: number) => {
+  try {
+    const myListings = await db
+      .select()
+      .from(listingsTable)
+      .where(eq(listingsTable.authorId, userId));
+    console.log("My listings:", myListings);
+    if (!myListings) {
+      throw new NotFoundError(`You currently no active listings`);
+    }
+    return myListings;
+  } catch (error) {
+    throw new Error("Error while fetching my listings");
+  }
+};
+
 export {
   getListings,
   createListing,
   getListingById,
   editListing,
   deleteListing,
+  myListings,
 };

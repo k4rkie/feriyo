@@ -19,10 +19,11 @@ const Sidebar = () => {
       name: "Categories",
       icon: <QueueListIcon className="w-5 h-5" />,
       children: [
-        { name: "Electronics", path: "/categories/electronics" },
-        { name: "Books", path: "/categories/books" },
-        { name: "Clothes", path: "/categories/clothes" },
-        { name: "Furniture", path: "/categories/furniture" },
+        { name: "Electronics", path: "/listings?category=electronics" },
+        { name: "Education", path: "/listings?category=education" },
+        { name: "Fashion", path: "/listings?category=fashion" },
+        { name: "Furniture", path: "/listings?category=furniture" },
+        { name: "Vehicle", path: "/listings?category=vehicle" },
       ],
     },
     {
