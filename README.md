@@ -43,7 +43,7 @@ The goal is to build a simple, reliable platform that makes buying and selling s
 ### 1. Clone the repository
 
 ```bash
-git clone git@github.com:k4rkie/Feriyo.git
+git clone git@github.com:k4rkie/feriyo.git
 cd feriyo
 ```
 
