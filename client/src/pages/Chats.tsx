@@ -10,6 +10,7 @@ import {
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import { useSocket } from "../context/SocketProvider";
 import MakeOfferModal from "../components/MakeOfferModal";
+import toast from "react-hot-toast";
 
 type ChatListItem = {
   listingId: string;
@@ -206,50 +207,83 @@ function Chats() {
   ) {
     e.preventDefault();
     setIsLoading(true);
-    if (price) {
-      if (price === undefined || isNaN(price)) {
-        setPriceError("Please enter a valid price");
-        setIsLoading(false);
-        return;
-      }
-      if (price <= 0) {
-        setPriceError("Price must be greater than 0");
-        setIsLoading(false);
-        return;
-      }
-      const BASE_URL: string = import.meta.env.VITE_BASE_BACKEND_URL;
-      const endPoint = `api/listings/${chatData?.listingId}/offer`;
-      const url = new URL(endPoint, BASE_URL);
+    setPriceError(null);
 
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${auth.accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            chatId,
-            listingId: chatData!.listingId,
-            purposedBy: auth.user?.userId,
-            price,
-          }),
-        });
-        const result = await response.json();
-        if (!response.ok) {
+    if (price === undefined || isNaN(price)) {
+      setPriceError("Please enter a valid price");
+      setIsLoading(false);
+      return;
+    }
+    if (price <= 0) {
+      setPriceError("Price must be greater than 0");
+      setIsLoading(false);
+      return;
+    }
+
+    const BASE_URL: string = import.meta.env.VITE_BASE_BACKEND_URL;
+    const endPoint = `api/listings/${chatData?.listingId}/offer`;
+    const url = new URL(endPoint, BASE_URL);
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${auth.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId,
+          listingId: chatData!.listingId,
+          proposedBy: auth.user?.userId,
+          price,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+
+        if (response.status === 400 || response.status === 422) {
+          const message = errorData.message || "Invalid offer details";
+          setPriceError(message);
+          toast.error(message);
           return;
         }
-        console.log(result);
-      } catch (err) {
-        setPriceError("Something went wrong");
-        console.log(err);
-        setIsLoading(false);
-      } finally {
-        setPriceError(null);
-        setIsMakeModalOfferOpen(false);
-        setIsLoading(false);
+
+        if (response.status === 409) {
+          toast.error(
+            errorData.message || "You already made an offer on this listing",
+          );
+          return;
+        }
+
+        if (response.status === 401) {
+          toast.error("Your session expired. Please log in again.");
+          return;
+        }
+
+        if (response.status >= 500) {
+          toast.error("Server error. Please try again later.");
+          return;
+        }
+
+        toast.error(errorData.message || "Failed to make offer");
+        return;
       }
+
+      const result = await response.json();
+      toast.success(result.message || "Offer made successfully");
+      console.log("Offer created:", result);
+    } catch (err) {
+      if (err instanceof TypeError) {
+        toast.error("Network error. Please check your connection.");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setPriceError(null);
+      setIsMakeModalOfferOpen(false);
+      setIsLoading(false);
     }
   }
 
@@ -304,7 +338,7 @@ function Chats() {
                   </h3>
 
                   <div className="flex items-center gap-2 ">
-                    <span className="text-sm text-[#8A8A8A] truncate max-w-[150px]">
+                    <span className="text-sm text-[#8A8A8A] truncate max-w-37.5">
                       {chatListItem.listing.title}
                     </span>
                   </div>
@@ -315,7 +349,6 @@ function Chats() {
                 </div>
               </div>
 
-              {/* Right: Listing Thumbnail (Visual Anchor) */}
               <div className="shrink-0 ml-2">
                 <div className="relative">
                   <img
@@ -442,7 +475,7 @@ function Chats() {
                   placeholder="Write a message..."
                   ref={messageInputRef}
                   className="w-full bg-[#181818] border border-[#2A2A2A] 
-                  rounded-xl px-4 py-2.5 focus-within:border-[#414141] transition-all placeholder:text-[#6F767E]"
+                  rounded-xl px-4 py-2.5 focus-within:border-[#414141] transition-all placeholder:text-[#6F767E] focus:outline-none"
                 />
 
                 <button

@@ -1,13 +1,17 @@
 import { count, desc, eq, ilike, sql } from "drizzle-orm";
 import { db } from "../db/db.js";
-import { listingsTable } from "../db/schema.js";
+import { listingsTable, offersTable } from "../db/schema.js";
 import type {
   createListingInput,
   editListingInput,
   makeOfferDetail,
 } from "../validators/listings.validator.js";
 import { getUserInfo } from "./auth.services.js";
-import { NotFoundError, UnauthorizedError } from "../errors/index.js";
+import {
+  DBConstraintError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors/index.js";
 
 type authorInfo = {
   userId: string;
@@ -49,17 +53,6 @@ const getListings = async (queryParams: queryParams) => {
   if (page <= 0) {
     throw new Error("Invalid page number");
   }
-
-  // console.log("Category:", category);
-  // console.log("search:", search);
-  // console.log("page:", page);
-
-  // console.log("Category type:", typeof category);
-  // console.log("search type:", typeof search);
-  // console.log("page type:", typeof page);
-
-  // if (category) console.log("Category exists");
-  // if (search) console.log("Search exists");
 
   let listings: listingsData[];
   if (category) {
@@ -304,7 +297,37 @@ const myListings = async (userId: string) => {
   }
 };
 
-const makeOffer = async (offerDetails: makeOfferDetail) => {};
+const makeOffer = async (offerDetails: makeOfferDetail) => {
+  const { chatId, proposedBy, price, listingId } = offerDetails;
+  try {
+    const [newoffer] = await db
+      .insert(offersTable)
+      .values({
+        chatId,
+        proposedBy,
+        price,
+        status: "pending",
+        expireAt: new Date(),
+      })
+      .returning();
+
+    await db
+      .update(listingsTable)
+      .set({
+        status: "pending",
+      })
+      .where(eq(listingsTable.listingId, listingId));
+
+    return newoffer;
+  } catch (err: any) {
+    if (err.cause.code === "23505") {
+      throw new DBConstraintError(
+        "There is already a pending offer in this chat",
+      );
+    }
+    throw err;
+  }
+};
 
 export {
   getListings,

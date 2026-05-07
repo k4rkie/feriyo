@@ -74,7 +74,7 @@ const editListingSchema = z.object({
 });
 
 const makeOfferSchema = z.object({
-  purposedBy: z.string("Invalid purposedBy id"),
+  proposedBy: z.string("Invalid proposedBy id"),
   listingId: z.string("Invalid listings id"),
   chatId: z.string("Invalid chat id"),
   price: z.number("Price must be a number"),

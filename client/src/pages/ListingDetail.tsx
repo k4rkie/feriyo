@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ChatBubbleBottomCenterTextIcon,
   BookmarkIcon as BookmarkOutline,
+  InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { BookmarkIcon as BookmarkSolid } from "@heroicons/react/24/solid";
 import { useAuth } from "../context/AuthProvider";
@@ -305,9 +306,17 @@ function ListingDetail() {
             </div>
             <div className="rounded-md bg-[#181818] p-3">
               <p className="text-[#A1A1A1]">Status</p>
-              <p className="text-[#E5E5E5] font-semibold">
+              <p className="text-[#E5E5E5] font-semibold flex items-center gap-1">
                 {listing.status.charAt(0).toUpperCase() +
-                  listing.status.slice(1)}
+                  listing.status.slice(1)}{" "}
+                {listing.status === "pending" && (
+                  <button
+                    title="There are pending offers on this listing.
+Contact the seller for more details."
+                  >
+                    <InformationCircleIcon className="w-3 h-3" />
+                  </button>
+                )}
               </p>
             </div>
           </div>

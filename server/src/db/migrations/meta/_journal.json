@@ -15,6 +15,20 @@
       "when": 1777791597108,
       "tag": "0001_first_dorian_gray",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778071786561,
+      "tag": "0002_robust_silhouette",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778072202116,
+      "tag": "0003_jittery_the_order",
+      "breakpoints": true
     }
   ]
 }

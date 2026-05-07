@@ -14,4 +14,12 @@ class UnauthorizedError extends Error {
   }
 }
 
-export { NotFoundError, UnauthorizedError };
+class DBConstraintError extends Error {
+  statusCode = 400;
+  constructor(message: string) {
+    super(message);
+    this.name = "DBConstraintError";
+  }
+}
+
+export { NotFoundError, UnauthorizedError, DBConstraintError };

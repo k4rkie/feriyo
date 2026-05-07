@@ -64,12 +64,6 @@ const contactSeller = async (
       senderId: userId,
       content: "I'm interested in buying this product!",
     });
-    await db
-      .update(listingsTable)
-      .set({
-        status: "pending",
-      })
-      .where(eq(listingsTable.listingId, listingId));
   }
   chatId = chat.chatId;
   return chatId;

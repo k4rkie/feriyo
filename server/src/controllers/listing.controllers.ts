@@ -15,7 +15,11 @@ import {
   makeOfferSchema,
 } from "../validators/listings.validator.js";
 import { getUserInfo } from "../services/auth.services.js";
-import { NotFoundError, UnauthorizedError } from "../errors/index.js";
+import {
+  DBConstraintError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors/index.js";
 import { log } from "console";
 
 const getListingsController = async (
@@ -290,7 +294,22 @@ const makeOfferContoller = async (
       data: newOffer,
       error: null,
     });
-  } catch (error) {}
+  } catch (error: any) {
+    if (error instanceof DBConstraintError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+        data: null,
+        error: null,
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      data: null,
+      error: error,
+    });
+  }
 };
 
 export {

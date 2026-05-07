@@ -47,12 +47,18 @@ function MakeOfferModal({
           <div className="flex gap-3 mt-4">
             <button
               type="submit"
-              className={`flex-1 px-4 py-2.5 rounded-lg 
-              bg-[#2ACFCF] text-[#0A0A0A] hover:bg-[#26BABA] active:scale-[0.98] 
-              transition-all duration-200 cursor-pointer font-semibold ${isLoading && " cursor-not-allowed"}`}
+              className={`flex-1 px-4 py-2.5 rounded-lg active:scale-[0.98] 
+              transition-all duration-200 font-semibold
+              ${isLoading ? "bg-[#2ACFCF] cursor-not-allowed text-[#0A0A0A]" : "bg-[#2ACFCF] text-[#0A0A0A] hover:bg-[#26BABA] cursor-pointer"}`}
               disabled={isLoading}
             >
-              Confirm
+              <span className="flex items-center justify-center">
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-[#0A0A0A]"></div>
+                ) : (
+                  "Confirm"
+                )}
+              </span>
             </button>
             <button
               onClick={() => {
@@ -61,7 +67,7 @@ function MakeOfferModal({
               }}
               className={`flex-1 px-4 py-2.5 border rounded-lg bg-[#1A1A1A] 
             text-[#E5E5E5] border-[#2A2A2A] hover:bg-[#222222] hover:border-[#3A3A3A] active:scale-[0.98]
-            transition-all duration-200 cursor-pointer font-medium ${isLoading && "cursor-not-allowed"}`}
+            transition-all duration-200 font-medium ${isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}
               disabled={isLoading}
             >
               Cancel

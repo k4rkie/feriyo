@@ -134,37 +134,37 @@ export const chatsRelations = relations(chatsTable, ({ one, many }) => ({
   messages: many(messagesTable),
 }));
 
-export const offerStatusEnum = pgEnum("status", [
+export const offerStatusEnum = pgEnum("offer_status", [
   "pending",
   "accepted",
   "rejected",
-  "cancelled"
+  "cancelled",
 ]);
 
-const offersTable = pgTable("offers", {
-  offerId: uuid("offer_id").primaryKey().defaultRandom(),
-  purposedBy: uuid("purposed_by").references(() => usersTable.userId, {
-    onDelete: "cascade",
-  }),
-  listingId: uuid("listing_id")
-    .references(() => listingsTable.listingId, {
-      onDelete: "cascade",
-    })
-    .notNull(),
-  chatId: uuid("chat_id")
-    .references(() => chatsTable.chatId, {
-      onDelete: "cascade",
-    })
-    .notNull(),
-  status: offerStatusEnum("status").notNull(),
-  price: integer("price").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  expireAt: timestamp("expire_at").notNull()
-},
-  (table) => [check("price_check", sql`${table.price} > 0`),
-  uniqueIndex("unique_pending_offer_idx")
-    .on(table.chatId, table.listingId)
-    .where(sql`${table.status} = 'pending'`)
+const offersTable = pgTable(
+  "offers",
+  {
+    offerId: uuid("offer_id").primaryKey().defaultRandom(),
+    proposedBy: uuid("proposed_by")
+      .references(() => usersTable.userId, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    chatId: uuid("chat_id")
+      .references(() => chatsTable.chatId, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    status: offerStatusEnum("status").notNull(),
+    price: integer("price").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    expireAt: timestamp("expire_at").notNull(),
+  },
+  (table) => [
+    check("price_check", sql`${table.price} > 0`),
+    uniqueIndex("unique_pending_offer_idx")
+      .on(table.chatId)
+      .where(sql`${table.status} = 'pending'`),
   ],
 );
 
