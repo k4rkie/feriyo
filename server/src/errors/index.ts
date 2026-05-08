@@ -22,4 +22,17 @@ class DBConstraintError extends Error {
   }
 }
 
-export { NotFoundError, UnauthorizedError, DBConstraintError };
+class BadRequestError extends Error {
+  statusCode = 400;
+  constructor(message: string) {
+    super(message);
+    this.name = "BadRequestError";
+  }
+}
+
+export {
+  NotFoundError,
+  UnauthorizedError,
+  DBConstraintError,
+  BadRequestError,
+};

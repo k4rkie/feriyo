@@ -1,4 +1,4 @@
-import { count, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db.js";
 import { listingsTable, offersTable } from "../db/schema.js";
 import type {
@@ -11,7 +11,9 @@ import {
   DBConstraintError,
   NotFoundError,
   UnauthorizedError,
+  BadRequestError,
 } from "../errors/index.js";
+import { io } from "../chat/chat.js";
 
 type authorInfo = {
   userId: string;
@@ -54,58 +56,39 @@ const getListings = async (queryParams: queryParams) => {
     throw new Error("Invalid page number");
   }
 
-  let listings: listingsData[];
+  // Create a base filter: only show available or pending items
+  const filters = [inArray(listingsTable.status, ["available", "pending"])];
+
+  // Add more filters if category or search are provided
   if (category) {
-    listings = await db
-      .select({
-        listingId: listingsTable.listingId,
-        title: listingsTable.title,
-        description: listingsTable.description,
-        price: listingsTable.price,
-        status: listingsTable.status,
-        authorId: listingsTable.authorId,
-        imageUrls: listingsTable.imageUrls,
-      })
-      .from(listingsTable)
-      .orderBy(desc(listingsTable.createdAt))
-      .where(eq(listingsTable.category, category))
-      .limit(pageSize)
-      .offset((page - 1) * pageSize);
-  } else if (search) {
-    listings = await db
-      .select({
-        listingId: listingsTable.listingId,
-        title: listingsTable.title,
-        description: listingsTable.description,
-        price: listingsTable.price,
-        status: listingsTable.status,
-        authorId: listingsTable.authorId,
-        imageUrls: listingsTable.imageUrls,
-      })
-      .from(listingsTable)
-      .orderBy(desc(listingsTable.createdAt))
-      .where(ilike(listingsTable.title, `%${search}%`))
-      .limit(pageSize)
-      .offset((page - 1) * pageSize);
-  } else {
-    listings = await db
-      .select({
-        listingId: listingsTable.listingId,
-        title: listingsTable.title,
-        description: listingsTable.description,
-        price: listingsTable.price,
-        status: listingsTable.status,
-        authorId: listingsTable.authorId,
-        imageUrls: listingsTable.imageUrls,
-      })
-      .from(listingsTable)
-      .orderBy(desc(listingsTable.createdAt))
-      .limit(pageSize)
-      .offset((page - 1) * pageSize);
+    filters.push(eq(listingsTable.category, category));
   }
+  if (search) {
+    filters.push(ilike(listingsTable.title, `%${search}%`));
+  }
+
+  // Fetch the filtered listings
+  const listings = await db
+    .select({
+      listingId: listingsTable.listingId,
+      title: listingsTable.title,
+      description: listingsTable.description,
+      price: listingsTable.price,
+      status: listingsTable.status,
+      authorId: listingsTable.authorId,
+      imageUrls: listingsTable.imageUrls,
+    })
+    .from(listingsTable)
+    .orderBy(desc(listingsTable.createdAt))
+    .where(and(...filters))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
+
+  // Fetch the total count using the SAME filters
   const [{ totalCount }] = await db
     .select({ totalCount: count() })
-    .from(listingsTable);
+    .from(listingsTable)
+    .where(and(...filters));
 
   let listingsWithUserInfo: getListingsData[] = [];
   async function attachAuthorInfo() {
@@ -115,6 +98,7 @@ const getListings = async (queryParams: queryParams) => {
     }
   }
   await attachAuthorInfo();
+
   return {
     listingsWithUserInfo,
     totalCount,
@@ -288,10 +272,7 @@ const myListings = async (userId: string) => {
       .from(listingsTable)
       .where(eq(listingsTable.authorId, userId));
 
-    if (!myListings) {
-      throw new NotFoundError(`You currently no active listings`);
-    }
-    return myListings;
+    return myListings || [];
   } catch (error) {
     throw new Error("Error while fetching my listings");
   }
@@ -299,6 +280,21 @@ const myListings = async (userId: string) => {
 
 const makeOffer = async (offerDetails: makeOfferDetail) => {
   const { chatId, proposedBy, price, listingId } = offerDetails;
+
+  const [listing] = await db
+    .select()
+    .from(listingsTable)
+    .where(eq(listingsTable.listingId, listingId))
+    .limit(1);
+
+  if (!listing) {
+    throw new NotFoundError("Listing not found");
+  }
+
+  if (listing.status === "sold") {
+    throw new BadRequestError("This item has already been sold");
+  }
+
   try {
     const [newoffer] = await db
       .insert(offersTable)
@@ -307,7 +303,7 @@ const makeOffer = async (offerDetails: makeOfferDetail) => {
         proposedBy,
         price,
         status: "pending",
-        expireAt: new Date(),
+        expireAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
       })
       .returning();
 
@@ -317,6 +313,12 @@ const makeOffer = async (offerDetails: makeOfferDetail) => {
         status: "pending",
       })
       .where(eq(listingsTable.listingId, listingId));
+
+    if (io) {
+      io.to(chatId).emit("offerCreated", {
+        offer: newoffer,
+      });
+    }
 
     return newoffer;
   } catch (err: any) {

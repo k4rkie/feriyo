@@ -118,22 +118,6 @@ const messagesTable = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const chatsRelations = relations(chatsTable, ({ one, many }) => ({
-  listing: one(listingsTable, {
-    fields: [chatsTable.listingId],
-    references: [listingsTable.listingId],
-  }),
-  buyer: one(usersTable, {
-    fields: [chatsTable.buyerId],
-    references: [usersTable.userId],
-  }),
-  seller: one(usersTable, {
-    fields: [chatsTable.sellerId],
-    references: [usersTable.userId],
-  }),
-  messages: many(messagesTable),
-}));
-
 export const offerStatusEnum = pgEnum("offer_status", [
   "pending",
   "accepted",
@@ -167,5 +151,33 @@ const offersTable = pgTable(
       .where(sql`${table.status} = 'pending'`),
   ],
 );
+
+export const chatsRelations = relations(chatsTable, ({ one, many }) => ({
+  listing: one(listingsTable, {
+    fields: [chatsTable.listingId],
+    references: [listingsTable.listingId],
+  }),
+  buyer: one(usersTable, {
+    fields: [chatsTable.buyerId],
+    references: [usersTable.userId],
+  }),
+  seller: one(usersTable, {
+    fields: [chatsTable.sellerId],
+    references: [usersTable.userId],
+  }),
+  messages: many(messagesTable),
+  offers: many(offersTable),
+}));
+
+export const offersRelations = relations(offersTable, ({ one }) => ({
+  chat: one(chatsTable, {
+    fields: [offersTable.chatId],
+    references: [chatsTable.chatId],
+  }),
+  proposedByUser: one(usersTable, {
+    fields: [offersTable.proposedBy],
+    references: [usersTable.userId],
+  }),
+}));
 
 export { usersTable, listingsTable, chatsTable, messagesTable, offersTable };

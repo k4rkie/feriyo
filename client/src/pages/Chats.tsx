@@ -6,6 +6,7 @@ import {
   PaperAirplaneIcon,
   MagnifyingGlassIcon,
   BanknotesIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/solid";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import { useSocket } from "../context/SocketProvider";
@@ -23,6 +24,7 @@ type ChatListItem = {
     title: string;
     price: number;
     imageUrls: string[];
+    status: string;
   };
   buyer: {
     username: string;
@@ -32,6 +34,16 @@ type ChatListItem = {
     username: string;
     avatarUrl: string | null;
   };
+};
+
+type Offer = {
+  offerId: string;
+  proposedBy: string;
+  chatId: string;
+  status: "pending" | "accepted" | "rejected" | "cancelled";
+  price: number;
+  createdAt: string;
+  expireAt: string;
 };
 
 type ChatData = {
@@ -45,6 +57,7 @@ type ChatData = {
     title: string;
     price: number;
     imageUrls: string[];
+    status: string;
   };
   buyer: {
     userId: string;
@@ -56,6 +69,7 @@ type ChatData = {
     username: string;
     avatarUrl: string | null;
   };
+  offers: Offer[];
 };
 
 type Message = {
@@ -196,10 +210,107 @@ function Chats() {
     };
     socket.on("newMessage", handleNewMessage);
 
+    const handleOfferUpdated = () => {
+      // Refresh chat data and messages
+      if (chatId) {
+        const fetchChatData = async () => {
+          const endPoint = `api/chats/${chatId}`;
+          const url = new URL(endPoint, BASE_URL);
+          const response = await fetch(url, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${auth.accessToken}`,
+            },
+          });
+          const result = await response.json();
+          setChatData(result.data.chatData);
+          setMessages(result.data.messages);
+        };
+        fetchChatData();
+      }
+    };
+    socket.on("offerUpdated", handleOfferUpdated);
+
+    const handleOfferCreated = () => {
+      if (chatId) {
+        const fetchChatData = async () => {
+          const endPoint = `api/chats/${chatId}`;
+          const url = new URL(endPoint, BASE_URL);
+          const response = await fetch(url, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${auth.accessToken}`,
+            },
+          });
+          const result = await response.json();
+          setChatData(result.data.chatData);
+          setMessages(result.data.messages);
+        };
+        fetchChatData();
+      }
+    };
+    socket.on("offerCreated", handleOfferCreated);
+
     return () => {
       socket.off("newMessage", handleNewMessage);
+      socket.off("offerUpdated", handleOfferUpdated);
+      socket.off("offerCreated", handleOfferCreated);
     };
-  }, [socket, isConnected]);
+  }, [socket, isConnected, chatId, auth.accessToken, BASE_URL]);
+
+  async function handleUpdateOfferStatus(
+    offerId: string,
+    status: "accepted" | "rejected" | "cancelled",
+  ) {
+    setIsLoading(true);
+    const endPoint = `api/offers/${offerId}/status`;
+    const url = new URL(endPoint, BASE_URL);
+
+    try {
+      const response = await fetch(url, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${auth.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(errorData.message || `Failed to ${status} offer`);
+        return;
+      }
+
+      const result = await response.json();
+      toast.success(result.message || `Offer ${status} successfully`);
+
+      if (chatId) {
+        const fetchChatData = async () => {
+          const endPoint = `api/chats/${chatId}`;
+          const url = new URL(endPoint, BASE_URL);
+          const response = await fetch(url, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${auth.accessToken}`,
+            },
+          });
+          const result = await response.json();
+          setChatData(result.data.chatData);
+          setMessages(result.data.messages);
+        };
+        fetchChatData();
+      }
+    } catch (err) {
+      toast.error("Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   async function handleMakeOffer(
     e: React.SubmitEvent<HTMLFormElement>,
@@ -220,7 +331,6 @@ function Chats() {
       return;
     }
 
-    const BASE_URL: string = import.meta.env.VITE_BASE_BACKEND_URL;
     const endPoint = `api/listings/${chatData?.listingId}/offer`;
     const url = new URL(endPoint, BASE_URL);
 
@@ -274,6 +384,25 @@ function Chats() {
       const result = await response.json();
       toast.success(result.message || "Offer made successfully");
       console.log("Offer created:", result);
+
+      // Refresh chat data and messages
+      if (chatId) {
+        const fetchChatData = async () => {
+          const endPoint = `api/chats/${chatId}`;
+          const url = new URL(endPoint, BASE_URL);
+          const response = await fetch(url, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${auth.accessToken}`,
+            },
+          });
+          const result = await response.json();
+          setChatData(result.data.chatData);
+          setMessages(result.data.messages);
+        };
+        fetchChatData();
+      }
     } catch (err) {
       if (err instanceof TypeError) {
         toast.error("Network error. Please check your connection.");
@@ -356,7 +485,6 @@ function Chats() {
                     alt="thumbnail"
                     className="w-14 h-14 rounded-lg object-cover border border-[#333] group-hover:brightness-110 transition-all"
                   />
-                  {/* Price tag overlay - looks very pro for marketplaces */}
                   <div className="absolute -bottom-1 -right-1 bg-[#1A1A1A] border border-[#333] rounded px-1">
                     <span className="text-[10px] font-bold text-white">
                       Rs. {chatListItem.listing.price || "N/A"}
@@ -428,33 +556,134 @@ function Chats() {
                 </Link>
               </div>
 
-              {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-end gap-4 custom-scrollbar">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.messageId}
-                    className={`flex ${msg.senderId === auth.user?.userId ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[70%] rounded-2xl p-3 px-4 text-sm shadow-sm ${
-                        msg.senderId === auth.user?.userId
-                          ? "bg-[#2ACFCF] text-[#111111] rounded-tr-none font-medium"
-                          : "bg-[#2A2A2A] text-[#E5E5E5] rounded-tl-none border border-[#3A3A3A]"
-                      }`}
-                    >
-                      <p>{msg.content}</p>
-                      <span
-                        className={`text-[10px] block mt-1.5 ${
-                          msg.senderId === auth.user?.userId
-                            ? "text-[#111111]/70"
-                            : "text-[#6F767E]"
-                        }`}
-                      >
-                        {formatTime(msg.createdAt)}
-                      </span>
+              {/* Offer Banner or Sold Status */}
+              {chatData.offers &&
+              chatData.offers.length > 0 &&
+              chatData.offers[0].status === "pending" ? (
+                <div className="bg-[#1A1A1A] border-b border-[#2A2A2A] p-3 px-6 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#2ACFCF]/10 rounded-lg">
+                      <BanknotesIcon className="w-5 h-5 text-[#2ACFCF]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {chatData.offers[0].proposedBy === auth.user?.userId
+                          ? "You made an offer"
+                          : `${chatData.offers[0].proposedBy === chatData.buyer.userId ? chatData.buyer.username : chatData.seller.username} made an offer`}
+                      </p>
+                      <p className="text-xs text-[#2ACFCF] font-bold">
+                        Rs. {chatData.offers[0].price.toLocaleString()}
+                      </p>
                     </div>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    {chatData.offers[0].proposedBy === auth.user?.userId ? (
+                      <button
+                        onClick={() =>
+                          handleUpdateOfferStatus(
+                            chatData.offers[0].offerId,
+                            "cancelled",
+                          )
+                        }
+                        className="px-4 py-1.5 bg-[#2A2A2A] hover:bg-[#3A3A3A] text-xs font-bold rounded-lg transition-all cursor-pointer"
+                      >
+                        Cancel Offer
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() =>
+                            handleUpdateOfferStatus(
+                              chatData.offers[0].offerId,
+                              "rejected",
+                            )
+                          }
+                          className="px-4 py-1.5 bg-[#2A2A2A] hover:bg-[#3A3A3A] text-xs font-bold rounded-lg transition-all cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleUpdateOfferStatus(
+                              chatData.offers[0].offerId,
+                              "accepted",
+                            )
+                          }
+                          className="px-4 py-1.5 bg-[#2ACFCF] hover:bg-[#26BABA] text-[#111111] text-xs font-bold rounded-lg transition-all cursor-pointer"
+                        >
+                          Accept
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : chatData.listing.status === "sold" ? (
+                <div className="bg-[#1A1A1A] border-b border-[#2A2A2A] p-3 px-6 flex items-center justify-center gap-2">
+                  <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                  <span className="text-sm font-bold text-green-500 uppercase tracking-wider">
+                    Item Sold
+                  </span>
+                </div>
+              ) : null}
+
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-end gap-4 custom-scrollbar">
+                {messages.map((msg) => {
+                  const isSystemMessage = msg.content?.startsWith("Offer of Rs.");
+
+                  if (isSystemMessage) {
+                    const isAccepted = msg.content?.includes("accepted");
+                    const isRejected = msg.content?.includes("rejected");
+                    const isCancelled = msg.content?.includes("cancelled");
+
+                    return (
+                      <div
+                        key={msg.messageId}
+                        className="flex justify-center my-2"
+                      >
+                        <span
+                          className={`px-4 py-1 rounded-full text-[11px] border transition-colors ${
+                            isAccepted
+                              ? "bg-green-500/10 text-green-500 border-green-500/20"
+                              : isRejected
+                                ? "bg-red-500/10 text-red-500 border-red-500/20"
+                                : isCancelled
+                                  ? "bg-[#2A2A2A] text-[#8A8A8A] border-[#3A3A3A]"
+                                  : "bg-[#1A1A1A] text-[#6F767E] border-[#2A2A2A]"
+                          }`}
+                        >
+                          {msg.content}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={msg.messageId}
+                      className={`flex ${msg.senderId === auth.user?.userId ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[70%] rounded-2xl p-3 px-4 text-sm shadow-sm ${
+                          msg.senderId === auth.user?.userId
+                            ? "bg-[#2ACFCF] text-[#111111] rounded-tr-none font-medium"
+                            : "bg-[#2A2A2A] text-[#E5E5E5] rounded-tl-none border border-[#3A3A3A]"
+                        }`}
+                      >
+                        <p>{msg.content}</p>
+                        <span
+                          className={`text-[10px] block mt-1.5 ${
+                            msg.senderId === auth.user?.userId
+                              ? "text-[#111111]/70"
+                              : "text-[#6F767E]"
+                          }`}
+                        >
+                          {formatTime(msg.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Input Area */}
@@ -464,17 +693,47 @@ function Chats() {
               >
                 <button
                   type="button"
-                  title="Make offer"
-                  className="p-2 bg-[#2ACFCF] hover:bg-[#26BABA] rounded-lg transition-all active:scale-95 group cursor-pointer"
+                  title={
+                    chatData.listing.status === "sold"
+                      ? "Item already sold"
+                      : chatData.offers &&
+                          chatData.offers.length > 0 &&
+                          chatData.offers[0].status === "pending"
+                        ? "Pending offer exists"
+                        : "Make offer"
+                  }
+                  disabled={
+                    chatData.listing.status === "sold" ||
+                    (chatData.offers &&
+                      chatData.offers.length > 0 &&
+                      chatData.offers[0].status === "pending")
+                  }
+                  className={`p-2 rounded-lg transition-all active:scale-95 group cursor-pointer ${
+                    chatData.listing.status === "sold" ||
+                    (chatData.offers &&
+                      chatData.offers.length > 0 &&
+                      chatData.offers[0].status === "pending")
+                      ? "bg-[#2A2A2A] cursor-not-allowed opacity-50"
+                      : "bg-[#2ACFCF] hover:bg-[#26BABA]"
+                  }`}
                   onClick={() => setIsMakeModalOfferOpen(true)}
                 >
-                  <BanknotesIcon className="w-5 h-5 text-[#111111]" />
+                  <BanknotesIcon
+                    className={`w-5 h-5 ${
+                      chatData.listing.status === "sold" ||
+                      (chatData.offers &&
+                        chatData.offers.length > 0 &&
+                        chatData.offers[0].status === "pending")
+                        ? "text-[#6F767E]"
+                        : "text-[#111111]"
+                    }`}
+                  />
                 </button>
                 <input
                   type="text"
                   placeholder="Write a message..."
                   ref={messageInputRef}
-                  className="w-full bg-[#181818] border border-[#2A2A2A] 
+                  className="w-full bg-[#181818] border border-[#2A2A2A]
                   rounded-xl px-4 py-2.5 focus-within:border-[#414141] transition-all placeholder:text-[#6F767E] focus:outline-none"
                 />
 

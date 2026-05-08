@@ -1,10 +1,9 @@
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, sql, max } from "drizzle-orm";
 import { db } from "../db/db.js";
 import { chatsTable, listingsTable, messagesTable } from "../db/schema.js";
 import { contactSellerInput } from "../validators/chat.validator.js";
 import { NotFoundError } from "../errors/index.js";
 import type { Server, Socket } from "socket.io";
-import { newMessageController } from "../controllers/chat.controllers.js";
 
 type newMessageObj = {
   message: string;
@@ -13,23 +12,59 @@ type newMessageObj = {
 };
 
 const getChatList = async (userId: string) => {
-  let chatList = await db.query.chatsTable.findMany({
-    where: (chatsTable, { or, eq }) =>
-      or(eq(chatsTable.buyerId, userId), eq(chatsTable.sellerId, userId)),
-    with: {
-      listing: {
-        columns: { listingId: true, title: true, price: true, imageUrls: true },
-      },
-      buyer: {
-        columns: { username: true, avatarUrl: true },
-      },
-      seller: {
-        columns: { username: true, avatarUrl: true },
-      },
-    },
-  });
+  // 1. Get the latest message timestamp for each chat the user is part of
+  const latestMessages = db
+    .select({
+      chatId: messagesTable.chatId,
+      lastMessageAt: max(messagesTable.createdAt).as("last_message_at"),
+    })
+    .from(messagesTable)
+    .groupBy(messagesTable.chatId)
+    .as("latest_messages");
 
-  return chatList;
+  // 2. Fetch chats and join with the latest message timestamp
+  const chatList = await db
+    .select({
+      chatId: chatsTable.chatId,
+      listingId: chatsTable.listingId,
+      buyerId: chatsTable.buyerId,
+      sellerId: chatsTable.sellerId,
+      createdAt: chatsTable.createdAt,
+      lastMessageAt: latestMessages.lastMessageAt,
+    })
+    .from(chatsTable)
+    .leftJoin(latestMessages, eq(chatsTable.chatId, latestMessages.chatId))
+    .where(or(eq(chatsTable.buyerId, userId), eq(chatsTable.sellerId, userId)))
+    .orderBy(desc(latestMessages.lastMessageAt));
+
+  // 3. Manually attach the relations
+  const chatListWithRelations = [];
+  for (const chat of chatList) {
+    const fullChat = await db.query.chatsTable.findFirst({
+      where: eq(chatsTable.chatId, chat.chatId),
+      with: {
+        listing: {
+          columns: {
+            listingId: true,
+            title: true,
+            price: true,
+            imageUrls: true,
+          },
+        },
+        buyer: {
+          columns: { username: true, avatarUrl: true },
+        },
+        seller: {
+          columns: { username: true, avatarUrl: true },
+        },
+      },
+    });
+    if (fullChat) {
+      chatListWithRelations.push(fullChat);
+    }
+  }
+
+  return chatListWithRelations;
 };
 
 const contactSeller = async (
@@ -83,13 +118,22 @@ const getChatData = async (chatId: string) => {
     where: (chatsTable, { eq }) => eq(chatsTable.chatId, chatId),
     with: {
       listing: {
-        columns: { listingId: true, title: true, price: true, imageUrls: true },
+        columns: {
+          listingId: true,
+          title: true,
+          price: true,
+          imageUrls: true,
+        },
       },
       buyer: {
         columns: { userId: true, username: true, avatarUrl: true },
       },
       seller: {
         columns: { userId: true, username: true, avatarUrl: true },
+      },
+      offers: {
+        where: (offers, { eq }) => eq(offers.status, "pending"),
+        limit: 1,
       },
     },
   });
@@ -101,8 +145,6 @@ const getChatData = async (chatId: string) => {
 
   return { chatData, messages };
 };
-
-const handleJoinRoom = async () => {};
 
 const handleNewMessage = async (newMessageData: newMessageObj, io: Server) => {
   console.log("UserId:", newMessageData.userId);

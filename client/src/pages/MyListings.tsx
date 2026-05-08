@@ -40,7 +40,7 @@ function MyListings() {
           },
         });
         const result = await response.json();
-        setListings(result.data);
+        setListings(result.data || []);
       } catch (error) {
         console.error("Failed to load listings", error);
       } finally {

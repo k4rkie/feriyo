@@ -295,20 +295,7 @@ const makeOfferContoller = async (
       error: null,
     });
   } catch (error: any) {
-    if (error instanceof DBConstraintError) {
-      return res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-        data: null,
-        error: null,
-      });
-    }
-    return res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-      data: null,
-      error: error,
-    });
+    next(error);
   }
 };
 

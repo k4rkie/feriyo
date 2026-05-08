@@ -4,7 +4,7 @@ function Landing() {
       <div className="max-w-xl text-center">
         <h1 className="text-4xl font-bold mb-4">Welcome to Feriyo</h1>
         <p className="text-lg text-gray-300">
-          This is your landing page. Browse listings using the button below.
+          Discover hundreds of listings and choose the one that fits you.
         </p>
         <a
           href="/listings"

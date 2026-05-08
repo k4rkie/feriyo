@@ -12,8 +12,10 @@ type joinRoomObj = {
   userId: string;
 };
 
+export let io: Server;
+
 export const initSocket = (httpServer: any) => {
-  const io = new Server(httpServer, {
+  io = new Server(httpServer, {
     cors: {
       origin: "http://localhost:3000",
       methods: ["GET", "POST"],
