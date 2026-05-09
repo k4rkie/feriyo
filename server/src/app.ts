@@ -8,6 +8,7 @@ import listingRouter from "./routes/listing.routes.js";
 import { initSocket } from "./chat/chat.js";
 import chatRouter from "./routes/chat.routes.js";
 import offerRouter from "./routes/offer.routes.js";
+import saveRouter from "./routes/save.routes.js";
 import errorHandler from "./middlewares/error.handler.js";
 
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/listings", listingRouter);
 app.use("/api/chats", chatRouter);
 app.use("/api/offers", offerRouter);
+app.use("/api/saves", saveRouter);
 
 app.use(errorHandler);
 

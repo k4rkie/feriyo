@@ -45,6 +45,53 @@ function ListingDetail() {
   const navigate = useNavigate();
   const { isConnected } = useSocket();
 
+  useEffect(() => {
+    if (auth.user && listingId) {
+      const checkIsSaved = async () => {
+        try {
+          const response = await fetch("http://localhost:8080/api/saves", {
+            headers: {
+              Authorization: `Bearer ${auth.accessToken}`,
+            },
+          });
+          const result = await response.json();
+          const savedListings = result.data || [];
+          const currentlySaved = savedListings.some(
+            (item: any) => item.listingId === listingId,
+          );
+          setIsSaved(currentlySaved);
+        } catch (error) {
+          console.error("Failed to check saved status", error);
+        }
+      };
+      checkIsSaved();
+    }
+  }, [auth.user, listingId, auth.accessToken]);
+
+  async function handleToggleSave() {
+    if (!auth.accessToken) {
+      return navigate("/login");
+    }
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/saves/${listingId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${auth.accessToken}`,
+          },
+        },
+      );
+      const result = await response.json();
+      if (response.ok) {
+        setIsSaved(result.data.saved);
+        toast.success(result.message);
+      }
+    } catch (error) {
+      toast.error("Failed to update saved status");
+    }
+  }
+
   const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(listing?.authorInfo.username ?? "User")}&background=4f46e5&color=fff&size=128`;
 
   const formatDate = (value: string | Date) => {
@@ -354,7 +401,7 @@ Contact the seller for more details."
 
               <button
                 className="flex justify-center gap-2 w-full px-4 py-2 border border-[#E5E5E5] rounded-md text-[#E5E5E5] hover:bg-[#E5E5E5] hover:text-[#111111] transition-colors duration-300 cursor-pointer"
-                onClick={() => setIsSaved(!isSaved)}
+                onClick={handleToggleSave}
               >
                 {isSaved ? (
                   <BookmarkSolid className="w-6 h-6" />

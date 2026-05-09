@@ -78,6 +78,15 @@ const listingsTable = pgTable(
   (table) => [check("price_check", sql`${table.price} > 0`)],
 );
 
+export const listingsRelations = relations(listingsTable, ({ one, many }) => ({
+  author: one(usersTable, {
+    fields: [listingsTable.authorId],
+    references: [usersTable.userId],
+  }),
+  chats: many(chatsTable),
+  savedBy: many(savedListingsTable),
+}));
+
 const chatsTable = pgTable(
   "chats",
   {
@@ -180,4 +189,39 @@ export const offersRelations = relations(offersTable, ({ one }) => ({
   }),
 }));
 
-export { usersTable, listingsTable, chatsTable, messagesTable, offersTable };
+const savedListingsTable = pgTable(
+  "saved_listings",
+  {
+    saveId: uuid("save_id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => usersTable.userId, { onDelete: "cascade" })
+      .notNull(),
+    listingId: uuid("listing_id")
+      .references(() => listingsTable.listingId, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    unqSaveConstraint: unique("unique_save_idx").on(table.userId, table.listingId),
+  }),
+);
+
+export const savedListingsRelations = relations(savedListingsTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [savedListingsTable.userId],
+    references: [usersTable.userId],
+  }),
+  listing: one(listingsTable, {
+    fields: [savedListingsTable.listingId],
+    references: [listingsTable.listingId],
+  }),
+}));
+
+export {
+  usersTable,
+  listingsTable,
+  chatsTable,
+  messagesTable,
+  offersTable,
+  savedListingsTable,
+};

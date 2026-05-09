@@ -28,11 +28,6 @@ const Sidebar = () => {
       ],
     },
     {
-      name: "Nearby",
-      icon: <MapPinIcon className="w-5 h-5" />,
-      path: "/nearby",
-    },
-    {
       name: "Saved items",
       icon: <BookmarkIcon className="w-5 h-5" />,
       path: "/saved-items",
