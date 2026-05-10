@@ -12,13 +12,8 @@ function ProfileDrowpdown() {
     <div className="absolute right-4 top-15 mt-2 w-48 bg-[#111111] border border-[#2A2A2A] rounded-md shadow-lg py-1 z-20">
       <ul>
         <li>
-          <Link to="/profile" className="block px-4 py-2 hover:bg-[#1A1A1A]">
+          <Link to={`users/${auth.user?.username}`} className="block px-4 py-2 hover:bg-[#1A1A1A]">
             Profile
-          </Link>
-        </li>
-        <li>
-          <Link to="/settings" className="block px-4 py-2 hover:bg-[#1A1A1A]">
-            Settings
           </Link>
         </li>
         <li>

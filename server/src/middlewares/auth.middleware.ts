@@ -18,8 +18,6 @@ const protect = (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const payload = jwt.decode(token);
-    // console.log("Decoded (no verify):", payload);
-    // console.log("Server time (seconds):", Math.floor(Date.now() / 1000));
     const decodedPayload = jwt.verify(
       token,
       process.env.ACCESS_TOKEN_SECRET!,
@@ -36,4 +34,23 @@ const protect = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { protect };
+const attachUser = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+
+    try {
+      const decodedPayload = jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET!,
+      ) as JwtPayload;
+      req.user = { userId: String(decodedPayload.sub) };
+    } catch (error) {
+      //ignore the exception just set req.user to undefined
+    }
+  }
+  next();
+};
+
+export { protect, attachUser };

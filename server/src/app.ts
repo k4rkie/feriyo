@@ -10,6 +10,7 @@ import chatRouter from "./routes/chat.routes.js";
 import offerRouter from "./routes/offer.routes.js";
 import saveRouter from "./routes/save.routes.js";
 import errorHandler from "./middlewares/error.handler.js";
+import userRouter from "./routes/user.routes.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -30,6 +31,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/auth", authRouter);
 app.use("/api/listings", listingRouter);
 app.use("/api/chats", chatRouter);
+app.use("/api/users", userRouter);
 app.use("/api/offers", offerRouter);
 app.use("/api/saves", saveRouter);
 

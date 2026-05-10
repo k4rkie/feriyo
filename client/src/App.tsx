@@ -42,7 +42,7 @@ function App() {
                 element={<EditListing />}
               />
               <Route path="listings/:listingId" element={<ListingDetail />} />
-              <Route path="profile" element={<UserProfile />} />
+              <Route path="users/:username" element={<UserProfile />} />
               <Route path="my-listings" element={<MyListings />} />
               <Route path="saved-items" element={<SavedListings />} />
               <Route>
