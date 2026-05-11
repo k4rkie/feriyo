@@ -81,7 +81,9 @@ const Navbar = () => {
               />
             </div>
           </div>
-          {showDropdown && <ProfileDrowpdown />}
+          {showDropdown && (
+            <ProfileDrowpdown setShowDropdown={setShowDropdown} />
+          )}
         </>
       ) : (
         <>

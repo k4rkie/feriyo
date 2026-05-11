@@ -21,11 +21,18 @@ function ListingCard({
   ],
   authorName = "Unknown Seller",
 }: ListingCardProps) {
+  const BASE_URL =
+    import.meta.env.VITE_BASE_BACKEND_URL || "http://localhost:8080";
+
   return (
     <Link to={`/listings/${listingId}`} className="group">
       <div className="bg-[#111111] border border-[#2A2A2A] rounded-lg overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-300">
         <img
-          src={`http://localhost:8080${imageUrl[0]}`}
+          src={
+            imageUrl[0]?.startsWith("http")
+              ? imageUrl[0]
+              : `${BASE_URL}${imageUrl[0]}`
+          }
           alt={title}
           className="w-full h-48 object-cover"
         />

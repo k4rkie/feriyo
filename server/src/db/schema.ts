@@ -202,19 +202,29 @@ const savedListingsTable = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => ({
-    unqSaveConstraint: unique("unique_save_idx").on(table.userId, table.listingId),
+    unqSaveConstraint: unique("unique_save_idx").on(
+      table.userId,
+      table.listingId,
+    ),
   }),
 );
 
-export const savedListingsRelations = relations(savedListingsTable, ({ one }) => ({
-  user: one(usersTable, {
-    fields: [savedListingsTable.userId],
-    references: [usersTable.userId],
+export const savedListingsRelations = relations(
+  savedListingsTable,
+  ({ one }) => ({
+    user: one(usersTable, {
+      fields: [savedListingsTable.userId],
+      references: [usersTable.userId],
+    }),
+    listing: one(listingsTable, {
+      fields: [savedListingsTable.listingId],
+      references: [listingsTable.listingId],
+    }),
   }),
-  listing: one(listingsTable, {
-    fields: [savedListingsTable.listingId],
-    references: [listingsTable.listingId],
-  }),
+);
+
+export const userRelations = relations(usersTable, ({ many }) => ({
+  listings: many(listingsTable),
 }));
 
 export {

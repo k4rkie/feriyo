@@ -514,7 +514,7 @@ function Chats() {
                   />
                   <div>
                     <Link
-                      to={`/user/${chatData.seller.userId}`}
+                      to={`/users/${chatData.seller.username}`}
                       className="font-semibold cursor-pointer"
                     >
                       {chatData.seller.username !== auth.user?.username
@@ -629,7 +629,8 @@ function Chats() {
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-end gap-4 custom-scrollbar">
                 {messages.map((msg) => {
-                  const isSystemMessage = msg.content?.startsWith("Offer of Rs.");
+                  const isSystemMessage =
+                    msg.content?.startsWith("Offer of Rs.");
 
                   if (isSystemMessage) {
                     const isAccepted = msg.content?.includes("accepted");

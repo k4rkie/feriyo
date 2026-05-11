@@ -20,11 +20,11 @@ const userProfileController = async (
         error: "Username is required",
       });
     }
-    const userData = await getUserProfile(String(username), userId);
+    const profileData = await getUserProfile(String(username), userId);
     return res.status(201).json({
       success: true,
       message: "User profile fetched successfully",
-      data: { userData },
+      data: { ...profileData },
       error: null,
     });
   } catch (error) {

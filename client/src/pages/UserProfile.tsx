@@ -3,6 +3,7 @@ import { PencilIcon } from "@heroicons/react/24/solid";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthProvider";
+import ListingCard from "../components/ListingCard";
 
 type Tab = "listings" | "sold";
 
@@ -26,6 +27,29 @@ type UserProfileData = {
     }
 );
 
+type UserListings = {
+  category:
+    | "electronics"
+    | "education"
+    | "fashion"
+    | "furniture"
+    | "vehicle"
+    | "others";
+  condition: "new" | "good" | "fair" | "old";
+  status: "available" | "pending" | "sold";
+  listingId: string;
+  title: string;
+  description: string | null;
+  price: number;
+  locationName: string;
+  latitude: string | null;
+  longitude: string | null;
+  imageUrls: string[];
+  createdAt: Date;
+  authorId: string;
+  updatedAt: Date;
+};
+
 function UserProfile() {
   const [activeTab, setActiveTab] = useState<Tab>("listings");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +58,7 @@ function UserProfile() {
   const auth = useAuth();
   const [userProfileData, setUserProfileData] =
     useState<UserProfileData | null>(null);
+  const [userListings, setUserListings] = useState<UserListings[]>([]);
 
   useEffect(() => {
     if (!auth.isAuthLoading && auth.accessToken) {
@@ -54,8 +79,10 @@ function UserProfile() {
             toast.error(result.message);
             return;
           }
-          console.log(result);
-          setUserProfileData(result.data.userData);
+          console.log("Profile Data:", result.data.userProfileData);
+          console.log("User listings:", result.data.userListings);
+          setUserProfileData(result.data.userProfileData);
+          setUserListings(result.data.userListings);
         } catch (error) {
           toast.error("Something went wrong");
           console.log(error);
@@ -93,7 +120,7 @@ function UserProfile() {
     )}&background=4f46e5&color=fff&size=256`;
 
   return (
-    <div className="max-w-3xl m-auto py-8 px-4">
+    <div className="max-w-6xl m-auto py-8 px-4">
       <header className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-8">
         <img
           src={avatarUrl}
@@ -170,9 +197,38 @@ function UserProfile() {
       </div>
       {/* Tab Content */}
       <section className="py-6">
-        <p className="text-[#A1A1AA] text-sm text-center py-10">
-          No {activeTab} yet.
-        </p>
+        {(() => {
+          const filtered = userListings.filter((l) =>
+            activeTab === "listings"
+              ? l.status !== "sold"
+              : l.status === "sold",
+          );
+
+          if (filtered.length === 0) {
+            return (
+              <p className="text-[#A1A1AA] text-sm text-center py-10">
+                No {activeTab} yet.
+              </p>
+            );
+          }
+
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filtered.map((listing) => (
+                <ListingCard
+                  key={listing.listingId}
+                  listingId={listing.listingId}
+                  title={listing.title}
+                  description={listing.description}
+                  price={listing.price}
+                  authorId={listing.authorId}
+                  imageUrl={listing.imageUrls}
+                  authorName={userProfileData.username}
+                />
+              ))}
+            </div>
+          );
+        })()}
       </section>
     </div>
   );

@@ -315,7 +315,7 @@ function ListingDetail() {
             <p className="text-[#A1A1A1] text-sm mt-[0.6rem]">Listed by :</p>
           </div>
           <Link
-            to={`/profile/${listing.authorInfo.userId}`}
+            to={`/users/${listing.authorInfo.username}`}
             className="flex items-center gap-3 p-3 mt-0 bg-[#181818] rounded-md hover:bg-[#222222] transition-all"
           >
             <img
