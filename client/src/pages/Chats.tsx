@@ -448,11 +448,15 @@ function Chats() {
             >
               <div className="relative shrink-0">
                 <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  src={
                     chatListItem.seller.username !== auth.user?.username
-                      ? chatListItem.seller.username
-                      : chatListItem.buyer.username,
-                  )}&background=4f46e5&color=fff&size=128`}
+                      ? chatListItem.seller.avatarUrl
+                        ? `http://localhost:8080${chatListItem.seller.avatarUrl}`
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatListItem.seller.username)}&background=4f46e5&color=fff&size=128`
+                      : chatListItem.buyer.avatarUrl
+                        ? `http://localhost:8080${chatListItem.buyer.avatarUrl}`
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatListItem.buyer.username)}&background=4f46e5&color=fff&size=128`
+                  }
                   alt="Profile"
                   className="w-12 h-12 bg-[#2A2A2A] rounded-full object-cover border border-[#3A3A3A] group-hover:border-indigo-500 transition-colors"
                 />
@@ -506,11 +510,17 @@ function Chats() {
               <div className="p-4 border-b border-[#2A2A2A] flex items-center justify-between bg-[#111111]">
                 <div className="flex items-center gap-3">
                   <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      chatData.seller.avatarUrl || chatData.seller.username,
-                    )}&background=4f46e5&color=fff&size=128`}
+                    src={
+                      chatData.seller.username !== auth.user?.username
+                        ? chatData.seller.avatarUrl
+                          ? `http://localhost:8080${chatData.seller.avatarUrl}`
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.seller.username)}&background=4f46e5&color=fff&size=128`
+                        : chatData.buyer.avatarUrl
+                          ? `http://localhost:8080${chatData.buyer.avatarUrl}`
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.buyer.username)}&background=4f46e5&color=fff&size=128`
+                    }
                     alt="Profile"
-                    className="w-12 h-12 bg-[#2A2A2A] rounded-full flex items-center justify-center font-semibold text-lg border border-[#3A3A3A]"
+                    className="w-12 h-12 bg-[#2A2A2A] rounded-full flex items-center justify-center font-semibold text-lg border border-[#3A3A3A] object-cover"
                   />
                   <div>
                     <Link
@@ -521,12 +531,6 @@ function Chats() {
                         ? chatData.seller.username
                         : chatData.buyer.username}
                     </Link>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-xs text-green-500 font-medium">
-                        Online
-                      </span>
-                    </div>
                   </div>
                 </div>
                 {/* link*/}

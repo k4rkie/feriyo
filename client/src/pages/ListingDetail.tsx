@@ -92,7 +92,9 @@ function ListingDetail() {
     }
   }
 
-  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(listing?.authorInfo.username ?? "User")}&background=4f46e5&color=fff&size=128`;
+  const avatarUrl = listing?.authorInfo.avatarUrl
+    ? `http://localhost:8080${listing.authorInfo.avatarUrl}`
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(listing?.authorInfo.username ?? "User")}&background=4f46e5&color=fff&size=128`;
 
   const formatDate = (value: string | Date) => {
     if (!value) return "N/A";

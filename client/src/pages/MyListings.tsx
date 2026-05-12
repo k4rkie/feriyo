@@ -80,6 +80,7 @@ function MyListings() {
               authorId={listing.authorId}
               imageUrl={listing.imageUrls}
               authorName={"You"}
+              authorAvatarUrl={auth.user?.avatarUrl}
             />
           ))}
         </section>

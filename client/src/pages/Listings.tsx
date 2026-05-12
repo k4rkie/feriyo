@@ -6,6 +6,7 @@ type authorInfo = {
   userId: string;
   username: string;
   email: string;
+  avatarUrl: string | null;
 };
 
 type ListingData = {
@@ -94,6 +95,7 @@ function Listings() {
                 authorId={listing.authorId}
                 imageUrl={listing.imageUrls}
                 authorName={listing.authorInfo.username}
+                authorAvatarUrl={listing.authorInfo.avatarUrl}
               />
             ))}
           </section>

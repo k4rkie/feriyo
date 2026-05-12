@@ -50,7 +50,7 @@ export const getSavedListings = async (userId: string) => {
       listing: {
         with: {
           author: {
-            columns: { username: true }
+            columns: { username: true, avatarUrl: true }
           }
         }
       }

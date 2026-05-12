@@ -9,6 +9,7 @@ type ListingCardProps = {
   authorId: string;
   imageUrl: string[];
   authorName: string;
+  authorAvatarUrl?: string | null;
 };
 
 function ListingCard({
@@ -20,9 +21,14 @@ function ListingCard({
     "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2F474x%2F9e%2F83%2F75%2F9e837528f01cf3f42119c5aeeed1b336.jpg%3Fnii%3Dt&f=1&nofb=1&ipt=2c20d3aa05ceab608416a76afd8dc6216bb751e9ffa1070903d355b82338b10d",
   ],
   authorName = "Unknown Seller",
+  authorAvatarUrl = null,
 }: ListingCardProps) {
   const BASE_URL =
     import.meta.env.VITE_BASE_BACKEND_URL || "http://localhost:8080";
+
+  const avatarUrl = authorAvatarUrl
+    ? `${BASE_URL}${authorAvatarUrl}`
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=4f46e5&color=fff&size=64`;
 
   return (
     <Link to={`/listings/${listingId}`} className="group">
@@ -48,7 +54,11 @@ function ListingCard({
           </div>
           <div className="mt-3 flex items-center gap-2 text-xs text-[#A1A1A1]">
             <span className="flex items-center gap-1 rounded-full border border-[#2A2A2A] px-2 py-1">
-              <UserCircleIcon className="h-5 w-5" />
+              <img
+                src={avatarUrl}
+                alt={authorName}
+                className="h-5 w-5 rounded-full object-cover"
+              />
               {authorName}
             </span>
           </div>

@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../db/db.js";
 import { usersTable } from "../db/schema.js";
 import { NotFoundError } from "../errors/index.js";
-import { email } from "zod";
+import type { editProfileInput } from "../validators/user.validator.js";
 
 const getUserProfile = async (username: string, userId: string | undefined) => {
   const user = await db.query.usersTable.findFirst({
@@ -45,4 +45,44 @@ const getUserProfile = async (username: string, userId: string | undefined) => {
   }
 };
 
-export { getUserProfile };
+const editProfile = async (
+  editProfileData: editProfileInput,
+  userId: string,
+) => {
+  const { username, locationName, avatar } = editProfileData;
+
+  const [existingUser] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.userId, userId))
+    .limit(1);
+
+  if (!existingUser) {
+    throw new NotFoundError("User not found");
+  }
+
+  let avatarUrl = existingUser.avatarUrl;
+  if (avatar) {
+    avatarUrl = `/uploads/images/useravatars/${avatar.filename}`;
+  }
+
+  const [updatedUser] = await db
+    .update(usersTable)
+    .set({
+      username,
+      locationName,
+      avatarUrl,
+    })
+    .where(eq(usersTable.userId, userId))
+    .returning({
+      userId: usersTable.userId,
+      username: usersTable.username,
+      email: usersTable.email,
+      locationName: usersTable.locationName,
+      avatarUrl: usersTable.avatarUrl,
+    });
+
+  return updatedUser;
+};
+
+export { getUserProfile, editProfile };

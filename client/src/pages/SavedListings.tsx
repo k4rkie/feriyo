@@ -18,6 +18,7 @@ type MyListingData = {
   updatedAt: Date;
   authorInfo?: {
     username: string;
+    avatarUrl: string | null;
   }
 };
 
@@ -79,6 +80,7 @@ function SavedListings() {
               authorId={listing.authorId}
               imageUrl={listing.imageUrls}
               authorName={listing.authorInfo?.username || "Seller"}
+              authorAvatarUrl={listing.authorInfo?.avatarUrl}
             />
           ))}
         </section>

@@ -26,7 +26,9 @@ const Navbar = () => {
     }
   };
   const auth = useAuth();
-  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user?.username)}&background=4f46e5&color=fff&size=128`;
+  const avatarUrl = auth.user?.avatarUrl
+    ? `http://localhost:8080${auth.user.avatarUrl}`
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user?.username || "User")}&background=4f46e5&color=fff&size=128`;
 
   return (
     <nav className="bg-[#111111] text-[#E5E5E5] px-6 py-3 flex items-center justify-between border-b border-[#2A2A2A]">

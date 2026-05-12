@@ -36,6 +36,7 @@ const signUpUser = async (signUpData: signupDataInput) => {
       userId: usersTable.userId,
       username: usersTable.username,
       email: usersTable.email,
+      avatarUrl: usersTable.avatarUrl,
     });
 
   const accessToken = generateAccessToken(newUser.userId);
@@ -51,6 +52,7 @@ const loginUser = async (loginData: loginDataInput) => {
       userId: usersTable.userId,
       username: usersTable.username,
       email: usersTable.email,
+      avatarUrl: usersTable.avatarUrl,
       passwordHash: usersTable.passwordHash,
     })
     .from(usersTable)
@@ -74,6 +76,7 @@ const loginUser = async (loginData: loginDataInput) => {
     userId: existingUser.userId,
     username: existingUser.username,
     email: existingUser.email,
+    avatarUrl: existingUser.avatarUrl,
   };
 
   const accessToken = generateAccessToken(existingUser.userId);
@@ -88,6 +91,7 @@ const getUserInfo = async (userId: string) => {
       userId: usersTable.userId,
       username: usersTable.username,
       email: usersTable.email,
+      avatarUrl: usersTable.avatarUrl,
     })
     .from(usersTable)
     .where(eq(usersTable.userId, userId))

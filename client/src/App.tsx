@@ -14,6 +14,7 @@ import MyListings from "./pages/MyListings";
 import SavedListings from "./pages/SavedListings";
 import { SocketProvider } from "./context/SocketProvider";
 import Chats from "./pages/Chats";
+import EditProfile from "./pages/EditProfile";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
               />
               <Route path="listings/:listingId" element={<ListingDetail />} />
               <Route path="users/:username" element={<UserProfile />} />
+              <Route path="users/:username/edit" element={<EditProfile />} />
               <Route path="my-listings" element={<MyListings />} />
               <Route path="saved-items" element={<SavedListings />} />
               <Route>

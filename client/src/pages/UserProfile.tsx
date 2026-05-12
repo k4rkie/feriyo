@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { PencilIcon } from "@heroicons/react/24/solid";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthProvider";
 import ListingCard from "../components/ListingCard";
@@ -114,7 +114,7 @@ function UserProfile() {
   console.log(activeTab);
   const isOwner = auth.user?.userId === userProfileData.userId;
   const avatarUrl =
-    userProfileData.avatarUrl ||
+    `${BASE_URL}${userProfileData.avatarUrl}` ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(
       userProfileData.username,
     )}&background=4f46e5&color=fff&size=256`;
@@ -168,12 +168,13 @@ function UserProfile() {
         </div>
         {isOwner && (
           <div className="flex justify-center sm:justify-start">
-            <button
+            <Link
+              to={`/users/${username}/edit`}
               className="flex justify-center items-center gap-1 px-4 py-1.5 
             bg-[#2A2A2A] hover:bg-[#333] text-[#E5E5E5] text-xs font-semibold rounded-full transition"
             >
               Edit Profile <PencilIcon className="w-3 h-3" />
-            </button>
+            </Link>
           </div>
         )}
       </header>

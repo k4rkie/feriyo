@@ -10,6 +10,7 @@ type User = {
   userId: string;
   username: string;
   email: string;
+  avatarUrl: string | null;
 };
 
 type AuthContextType = {
@@ -18,6 +19,7 @@ type AuthContextType = {
   isAuthLoading: boolean;
   login: (user: User, auth: string) => void;
   logout: () => void;
+  updateUser: (userData: Partial<User>) => void;
 };
 
 type AuthProviderPropType = {
@@ -76,12 +78,17 @@ function AuthProvider({ children }: AuthProviderPropType) {
     setAccessToken(null);
   }
 
+  function updateUser(userData: Partial<User>) {
+    setUser((prev) => (prev ? { ...prev, ...userData } : null));
+  }
+
   const value: AuthContextType = {
     user,
     accessToken,
     isAuthLoading,
     login,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { getUserProfile } from "../services/user.services.js";
+import { getUserProfile, editProfile } from "../services/user.services.js";
 import { NotFoundError } from "../errors/index.js";
+import { editProfileSchema } from "../validators/user.validator.js";
 
 const userProfileController = async (
   req: Request,
@@ -40,4 +41,37 @@ const userProfileController = async (
   }
 };
 
-export { userProfileController };
+const editProfileController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const userId = req.user!.userId;
+  const requestData = { ...req.body, avatar: req.file || null };
+
+  const result = editProfileSchema.safeParse(requestData);
+
+  if (!result.success) {
+    const { fieldErrors } = result.error.flatten();
+    return res.status(400).json({
+      success: false,
+      message: "Validation Error",
+      data: null,
+      error: fieldErrors,
+    });
+  }
+
+  try {
+    const updatedUser = await editProfile(result.data, userId);
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedUser,
+      error: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { userProfileController, editProfileController };
