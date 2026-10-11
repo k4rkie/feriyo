@@ -13,6 +13,9 @@
 - **Haggle** — buyers can send a price offer inside the chat. The seller can accept or reject it. Offers expire after a while, and only one open offer can exist in a conversation at a time.
 - **Have a profile** — every user gets a public page with their avatar and their listings.
 
+> [!NOTE]  
+> This was an early learning project and has been forzen at v1 so contains bad beginner practices(N+1 queries, local upload stores .etc).
+
 ---
 
 ## Built with
@@ -108,3 +111,4 @@ pnpm dev
 
 Web: `http://localhost:3000`
 API: `http://localhost:8000`
+
