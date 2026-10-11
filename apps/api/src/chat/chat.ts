@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Server } from "socket.io";
 import { handleNewMessage } from "../services/chat.services.js";
 
@@ -17,7 +18,7 @@ export let io: Server;
 export const initSocket = (httpServer: any) => {
   io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:3000",
+      origin: process.env.FRONTEND_URL,
       methods: ["GET", "POST"],
       credentials: true,
     },

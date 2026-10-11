@@ -24,7 +24,7 @@ function ListingCard({
   authorAvatarUrl = null,
 }: ListingCardProps) {
   const BASE_URL =
-    import.meta.env.VITE_BASE_BACKEND_URL || "http://localhost:8080";
+    import.meta.env.VITE_BASE_BACKEND_URL || "http://localhost:8000";
 
   const avatarUrl = authorAvatarUrl
     ? `${BASE_URL}${authorAvatarUrl}`

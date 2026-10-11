@@ -49,8 +49,10 @@ function ListingDetail() {
     if (auth.user && listingId) {
       const checkIsSaved = async () => {
         try {
-          const response = await fetch("http://localhost:8080/api/saves", {
-            headers: {
+          const response = await fetch(
+            `${import.meta.env.VITE_BASE_BACKEND_URL}/api/saves`,
+            {
+              headers: {
               Authorization: `Bearer ${auth.accessToken}`,
             },
           });
@@ -74,7 +76,7 @@ function ListingDetail() {
     }
     try {
       const response = await fetch(
-        `http://localhost:8080/api/saves/${listingId}`,
+        `${import.meta.env.VITE_BASE_BACKEND_URL}/api/saves/${listingId}`,
         {
           method: "POST",
           headers: {
@@ -93,7 +95,7 @@ function ListingDetail() {
   }
 
   const avatarUrl = listing?.authorInfo.avatarUrl
-    ? `http://localhost:8080${listing.authorInfo.avatarUrl}`
+    ? `${import.meta.env.VITE_BASE_BACKEND_URL}${listing.authorInfo.avatarUrl}`
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(listing?.authorInfo.username ?? "User")}&background=4f46e5&color=fff&size=128`;
 
   const formatDate = (value: string | Date) => {
@@ -123,7 +125,7 @@ function ListingDetail() {
     const fetchListing = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8080/api/listings/${listingId}`,
+          `${import.meta.env.VITE_BASE_BACKEND_URL}/api/listings/${listingId}`,
         );
         const result = await response.json();
         setListing(result.data || null);
@@ -155,7 +157,7 @@ function ListingDetail() {
   async function handleDelete() {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/listings/${listingId}`,
+        `${import.meta.env.VITE_BASE_BACKEND_URL}/api/listings/${listingId}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -255,7 +257,7 @@ function ListingDetail() {
             {listing.imageUrls.length > 0 ? (
               <div className="h-full w-full flex items-center justify-center bg-[#111111]">
                 <img
-                  src={`http://localhost:8080${listing.imageUrls[currentImageIdx]}`}
+                  src={`${import.meta.env.VITE_BASE_BACKEND_URL}${listing.imageUrls[currentImageIdx]}`}
                   alt={`Listing image ${currentImageIdx + 1}`}
                   className="max-h-full max-w-full object-contain"
                 />

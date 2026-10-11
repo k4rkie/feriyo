@@ -32,7 +32,7 @@ function EditProfile() {
       if (!auth.user?.username) return;
       try {
         const response = await fetch(
-          `http://localhost:8080/api/users/${auth.user.username}`,
+          `${import.meta.env.VITE_BASE_BACKEND_URL}/api/users/${auth.user.username}`,
           {
             method: "GET",
           },
@@ -45,7 +45,9 @@ function EditProfile() {
         setValue("username", profile.username);
         setValue("locationName", profile.locationName);
         if (profile.avatarUrl) {
-          setPreviewUrl(`http://localhost:8080${profile.avatarUrl}`);
+          setPreviewUrl(
+            `${import.meta.env.VITE_BASE_BACKEND_URL}${profile.avatarUrl}`,
+          );
         }
       } catch (error) {
         toast.error("Something went wrong while fetching profile");
@@ -71,8 +73,10 @@ function EditProfile() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/users/me`, {
-        method: "PUT",
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_BACKEND_URL}/api/users/me`,
+        {
+          method: "PUT",
         headers: {
           Authorization: `Bearer ${auth.accessToken}`,
         },

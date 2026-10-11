@@ -19,8 +19,10 @@ function Login() {
 
   const handleLogin: SubmitHandler<loginDataInput> = async (data) => {
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
-        method: "POST",
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_BACKEND_URL}/api/auth/login`,
+        {
+          method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

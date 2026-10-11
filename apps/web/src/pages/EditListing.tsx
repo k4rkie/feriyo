@@ -59,7 +59,7 @@ function EditListing() {
     async function getEditFormData() {
       try {
         const response = await fetch(
-          `http://localhost:8080/api/listings/${listingId}`,
+          `${import.meta.env.VITE_BASE_BACKEND_URL}/api/listings/${listingId}`,
           {
             method: "GET",
           },
@@ -114,7 +114,7 @@ function EditListing() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/listings/${listingId}`,
+        `${import.meta.env.VITE_BASE_BACKEND_URL}/api/listings/${listingId}`,
         {
           method: "PUT",
           credentials: "include",
@@ -340,7 +340,7 @@ function EditListing() {
                     <img
                       src={
                         previewImage.isExisting
-                          ? `http://localhost:8080${previewImage.imgUrl}`
+                          ? `${import.meta.env.VITE_BASE_BACKEND_URL}${previewImage.imgUrl}`
                           : previewImage.imgUrl
                       }
                       alt="preview"

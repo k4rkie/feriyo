@@ -17,8 +17,10 @@ function Signup() {
 
   const handleFormSubmit: SubmitHandler<signupDataInput> = async (data) => {
     try {
-      const response = await fetch("http://localhost:8080/api/auth/signup", {
-        method: "POST",
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_BACKEND_URL}/api/auth/signup`,
+        {
+          method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

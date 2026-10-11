@@ -27,7 +27,7 @@ const Navbar = () => {
   };
   const auth = useAuth();
   const avatarUrl = auth.user?.avatarUrl
-    ? `http://localhost:8080${auth.user.avatarUrl}`
+    ? `${import.meta.env.VITE_BASE_BACKEND_URL}${auth.user.avatarUrl}`
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user?.username || "User")}&background=4f46e5&color=fff&size=128`;
 
   return (

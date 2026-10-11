@@ -27,7 +27,7 @@ function SocketProvider({ children }: SocketProviderPropType) {
 
   useEffect(() => {
     if (auth.accessToken) {
-      const socket = io("ws://localhost:8080", {
+      const socket = io(import.meta.env.VITE_BASE_BACKEND_URL, {
         auth: {
           accessToken: auth.accessToken,
         },

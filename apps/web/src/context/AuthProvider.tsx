@@ -37,10 +37,13 @@ function AuthProvider({ children }: AuthProviderPropType) {
     let isMounted = true;
     async function initializeAuth() {
       try {
-        const response = await fetch("http://localhost:8080/api/auth/refresh", {
-          method: "GET",
-          credentials: "include",
-        });
+        const response = await fetch(
+          `${import.meta.env.VITE_BASE_BACKEND_URL}/api/auth/refresh`,
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
         if (!response.ok) {
           console.warn("Refresh failed, keeping user state unchanged");
           return;
@@ -70,7 +73,7 @@ function AuthProvider({ children }: AuthProviderPropType) {
   }
 
   async function logout() {
-    await fetch("http://localhost:8080/api/auth/logout", {
+    await fetch(`${import.meta.env.VITE_BASE_BACKEND_URL}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
     });

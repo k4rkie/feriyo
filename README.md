@@ -1,10 +1,7 @@
 <div align="center">
   <img src="./apps/web/public/feriyo.svg" alt="Feriyo Logo" width="150" height="auto" />
-  <p><strong>Feriyo is a website where people buy and sell second-hand stuff.</strong></p>
+  <p><strong>Feriyo is a place where people buy and sell second-hand stuff.</strong></p>
 </div>
-
-Think of it like a small Facebook Marketplace: you post what you want to sell, buyers message you, you haggle over the price, and you make a deal.
-
 
 ## What can you do on Feriyo?
 
@@ -41,32 +38,42 @@ feriyo/
 │   └── shared/         @feriyo/shared — Zod validation schemas (used by both web & api)
 ├── pnpm-workspace.yaml
 ├── docker-compose.yml  — PostgreSQL
-└── .env                — docker-compose env vars
+└── .env.example        — copy to .env, same for apps/api and apps/web
 ```
 
 The `shared/` package holds the input-checking rules (Zod), so the browser and the server always agree on what valid data looks like.
 
 ---
 
-## Running it on your own machine
+## Running it locally
 
-You'll need [Node.js](https://nodejs.org) (v18+) and [pnpm](https://pnpm.io).
+Need Node.js 18+ and pnpm.
 
-**1. Get the code**
+**1. Clone**
 
 ```bash
 git clone git@github.com:k4rkie/feriyo.git
 cd feriyo
 ```
 
-**2. Set up environment variables**
+**2. Env files**
 
-The root `.env` is used by `docker-compose.yml` to configure the PostgreSQL container:
+Copy each `.env.example` to `.env` and fill the values:
 
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=feriyo_postgre123
-POSTGRES_DB=feriyodb
+```bash
+cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+```
+
+- `.env` — Postgres user/password/db for docker-compose
+- `apps/api/.env` — PORT, DATABASE_URL, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, FRONTEND_URL
+- `apps/web/.env` — VITE_BASE_BACKEND_URL (point to the api, e.g. `http://localhost:8000`)
+
+Generate secrets with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
 **3. Start the database**
@@ -75,43 +82,29 @@ POSTGRES_DB=feriyodb
 docker compose up -d
 ```
 
-This spins up a PostgreSQL 17 container on `localhost:5432` using the credentials above.
-
-**4. Install dependencies**
+**4. Install deps**
 
 ```bash
 pnpm install
 ```
 
-**5. Set up the API environment**
-
-Create a file called `.env` inside `apps/api/` with these values:
-
-```env
-PORT=8000
-DATABASE_URL=postgres://postgres:feriyo_postgre123@localhost:5432/feriyodb
-ACCESS_TOKEN_SECRET=any_long_random_string
-REFRESH_TOKEN_SECRET=another_long_random_string
-```
-
-**6. Create the database tables**
+**5. Create tables**
 
 ```bash
 pnpm --filter @feriyo/api exec drizzle-kit push --config ./src/db/drizzle.config.ts
 ```
 
-**(Optional)** Seed the database with fake users and listings:
+Optional seed:
 
 ```bash
 pnpm --filter @feriyo/api exec tsx src/db/seed.ts
 ```
 
-**7. Start everything**
+**6. Run**
 
 ```bash
 pnpm dev
 ```
 
-This runs the API server and the Vite dev server in parallel.
-
-Open `http://localhost:5173` in your browser.
+Web: `http://localhost:3000`
+API: `http://localhost:8000`

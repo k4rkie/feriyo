@@ -451,10 +451,10 @@ function Chats() {
                   src={
                     chatListItem.seller.username !== auth.user?.username
                       ? chatListItem.seller.avatarUrl
-                        ? `http://localhost:8080${chatListItem.seller.avatarUrl}`
+                        ? `${import.meta.env.VITE_BASE_BACKEND_URL}${chatListItem.seller.avatarUrl}`
                         : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatListItem.seller.username)}&background=4f46e5&color=fff&size=128`
                       : chatListItem.buyer.avatarUrl
-                        ? `http://localhost:8080${chatListItem.buyer.avatarUrl}`
+                        ? `${import.meta.env.VITE_BASE_BACKEND_URL}${chatListItem.buyer.avatarUrl}`
                         : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatListItem.buyer.username)}&background=4f46e5&color=fff&size=128`
                   }
                   alt="Profile"
@@ -485,7 +485,7 @@ function Chats() {
               <div className="shrink-0 ml-2">
                 <div className="relative">
                   <img
-                    src={`http://localhost:8080${chatListItem.listing.imageUrls[0]}`}
+                    src={`${import.meta.env.VITE_BASE_BACKEND_URL}${chatListItem.listing.imageUrls[0]}`}
                     alt="thumbnail"
                     className="w-14 h-14 rounded-lg object-cover border border-[#333] group-hover:brightness-110 transition-all"
                   />
@@ -513,10 +513,10 @@ function Chats() {
                     src={
                       chatData.seller.username !== auth.user?.username
                         ? chatData.seller.avatarUrl
-                          ? `http://localhost:8080${chatData.seller.avatarUrl}`
+                          ? `${import.meta.env.VITE_BASE_BACKEND_URL}${chatData.seller.avatarUrl}`
                           : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.seller.username)}&background=4f46e5&color=fff&size=128`
                         : chatData.buyer.avatarUrl
-                          ? `http://localhost:8080${chatData.buyer.avatarUrl}`
+                          ? `${import.meta.env.VITE_BASE_BACKEND_URL}${chatData.buyer.avatarUrl}`
                           : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.buyer.username)}&background=4f46e5&color=fff&size=128`
                     }
                     alt="Profile"
@@ -552,7 +552,7 @@ function Chats() {
                   {/* Product Image */}
                   <div className="shrink-0">
                     <img
-                      src={`http://localhost:8080${chatData.listing.imageUrls[0]}`}
+                      src={`${import.meta.env.VITE_BASE_BACKEND_URL}${chatData.listing.imageUrls[0]}`}
                       alt="listing thumbnail"
                       className="w-10 h-10 rounded-md object-cover border border-[#333] group-hover:border-[#2ACFCF]/50 transition-colors"
                     />

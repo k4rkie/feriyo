@@ -32,8 +32,10 @@ function MyListings() {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/listings/me", {
-          method: "GET",
+        const response = await fetch(
+          `${import.meta.env.VITE_BASE_BACKEND_URL}/api/listings/me`,
+          {
+            method: "GET",
           credentials: "include",
           headers: {
             Authorization: `Bearer ${auth.accessToken}`,

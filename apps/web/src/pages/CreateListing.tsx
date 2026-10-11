@@ -57,8 +57,10 @@ function CreateListing() {
       formData.append("listingImages", image);
     }
     try {
-      const response = await fetch("http://localhost:8080/api/listings", {
-        method: "POST",
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_BACKEND_URL}/api/listings`,
+        {
+          method: "POST",
         credentials: "include",
         headers: {
           Authorization: `Bearer ${auth.accessToken}`,
