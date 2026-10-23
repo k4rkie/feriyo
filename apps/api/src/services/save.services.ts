@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db/db.js";
 import { savedListingsTable, listingsTable } from "../db/schema.js";
 import { NotFoundError } from "../errors/index.js";
@@ -46,6 +46,7 @@ export const toggleSaveListing = async (listingId: string, userId: string) => {
 export const getSavedListings = async (userId: string) => {
   const saved = await db.query.savedListingsTable.findMany({
     where: eq(savedListingsTable.userId, userId),
+    orderBy: desc(savedListingsTable.createdAt),
     with: {
       listing: {
         with: {

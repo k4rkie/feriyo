@@ -1,32 +1,9 @@
-import {
-  createContext,
-  type ReactNode,
-  useState,
-  useContext,
-  useEffect,
-} from "react";
-
-type User = {
-  userId: string;
-  username: string;
-  email: string;
-  avatarUrl: string | null;
-};
-
-type AuthContextType = {
-  user: User | null;
-  accessToken: string | null;
-  isAuthLoading: boolean;
-  login: (user: User, auth: string) => void;
-  logout: () => void;
-  updateUser: (userData: Partial<User>) => void;
-};
+import { type ReactNode, useState, useEffect } from "react";
+import { AuthContext, type AuthContextType, type User } from "./auth-context";
 
 type AuthProviderPropType = {
   children: ReactNode;
 };
-
-const AuthContext = createContext<AuthContextType | null>(null);
 
 function AuthProvider({ children }: AuthProviderPropType) {
   const [user, setUser] = useState<User | null>(null);
@@ -35,6 +12,7 @@ function AuthProvider({ children }: AuthProviderPropType) {
 
   useEffect(() => {
     let isMounted = true;
+
     async function initializeAuth() {
       try {
         const response = await fetch(
@@ -44,22 +22,22 @@ function AuthProvider({ children }: AuthProviderPropType) {
             credentials: "include",
           },
         );
-        if (!response.ok) {
-          console.warn("Refresh failed, keeping user state unchanged");
-          return;
-        }
+        if (!response.ok) return;
+
         const result = await response.json();
         if (!isMounted) return;
 
         setAccessToken(result.data.accessToken);
         setUser(result.data.user);
-      } catch (error) {
+      } catch {
+        if (!isMounted) return;
         setUser(null);
         setAccessToken(null);
       } finally {
-        setIsAuthLoading(false);
+        if (isMounted) setIsAuthLoading(false);
       }
     }
+
     initializeAuth();
 
     return () => {
@@ -97,12 +75,4 @@ function AuthProvider({ children }: AuthProviderPropType) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be inside AuthProvider");
-  }
-  return context;
-}
-
-export { AuthProvider, useAuth };
+export { AuthProvider };

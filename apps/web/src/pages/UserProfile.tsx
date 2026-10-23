@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
 import ListingCard from "../components/ListingCard";
+import { getImageUrl } from "../utils/imageUrl";
 
 type Tab = "listings" | "sold";
 
@@ -61,37 +62,32 @@ function UserProfile() {
   const [userListings, setUserListings] = useState<UserListings[]>([]);
 
   useEffect(() => {
-    if (!auth.isAuthLoading && auth.accessToken) {
-      async function fetchUserProfileData() {
-        const endPoint = `api/users/${username}`;
-        const url = new URL(endPoint, BASE_URL);
-        setIsLoading(true);
-        try {
-          const response = await fetch(url, {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              Authorization: `Bearer ${auth.accessToken}`,
-            },
-          });
-          const result = await response.json();
-          if (!response.ok) {
-            toast.error(result.message);
-            return;
-          }
-          console.log("Profile Data:", result.data.userProfileData);
-          console.log("User listings:", result.data.userListings);
-          setUserProfileData(result.data.userProfileData);
-          setUserListings(result.data.userListings);
-        } catch (error) {
-          toast.error("Something went wrong");
-          console.log(error);
-        } finally {
-          setIsLoading(false);
+    if (auth.isAuthLoading) return;
+
+    async function fetchUserProfileData() {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${BASE_URL}/api/users/${username}`, {
+          method: "GET",
+          credentials: "include",
+          headers: auth.accessToken
+            ? { Authorization: `Bearer ${auth.accessToken}` }
+            : undefined,
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          toast.error(result.message);
+          return;
         }
+        setUserProfileData(result.data.userProfileData);
+        setUserListings(result.data.userListings);
+      } catch {
+        toast.error("Something went wrong");
+      } finally {
+        setIsLoading(false);
       }
-      fetchUserProfileData();
     }
+    fetchUserProfileData();
   }, [BASE_URL, username, auth.accessToken, auth.isAuthLoading]);
 
   if (isLoading || auth.isAuthLoading) {
@@ -111,13 +107,12 @@ function UserProfile() {
     );
   }
 
-  console.log(activeTab);
   const isOwner = auth.user?.userId === userProfileData.userId;
-  const avatarUrl =
-    `${BASE_URL}${userProfileData.avatarUrl}` ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      userProfileData.username,
-    )}&background=4f46e5&color=fff&size=256`;
+  const avatarUrl = userProfileData.avatarUrl
+    ? getImageUrl(userProfileData.avatarUrl)
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        userProfileData.username,
+      )}&background=4f46e5&color=fff&size=256`;
 
   return (
     <div className="max-w-6xl m-auto py-8 px-4">

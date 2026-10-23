@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
 import toast from "react-hot-toast";
 
 type Prop = {

@@ -8,40 +8,36 @@ import {
   makeOffer,
   myListings,
 } from "../services/listing.services.js";
-import multer from "multer";
 import {
   createListingSchema,
   editListingSchema,
+  getListingsQuerySchema,
   makeOfferSchema,
 } from "../validators/listings.validator.js";
-import { getUserInfo } from "../services/auth.services.js";
-import {
-  DBConstraintError,
-  NotFoundError,
-  UnauthorizedError,
-} from "../errors/index.js";
-import { log } from "console";
+import { NotFoundError, UnauthorizedError } from "../errors/index.js";
 
 const getListingsController = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const category: any =
-    req.query.category === undefined ? "" : String(req.query.category);
-  const search: any =
-    req.query.search === undefined ? "" : String(req.query.search);
-  const page = Number(req.query.page);
+  const query = getListingsQuerySchema.safeParse(req.query);
 
-  const queryParams = {
-    category,
-    search,
-    page,
-  };
+  if (!query.success) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid query parameters",
+      data: null,
+      error: query.error.flatten().fieldErrors,
+    });
+  }
 
   try {
-    const { listingsWithUserInfo, totalCount, totalPages } =
-      await getListings(queryParams);
+    const { listingsWithUserInfo, totalCount, totalPages } = await getListings({
+      category: query.data.category ?? "",
+      search: query.data.search ?? "",
+      page: query.data.page,
+    });
     return res.status(200).json({
       success: true,
       message: "Listings fetched successfully",
@@ -53,12 +49,7 @@ const getListingsController = async (
       error: null,
     });
   } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Listings fetching error",
-      data: null,
-      error: error,
-    });
+    next(error);
   }
 };
 
@@ -89,12 +80,7 @@ const createListingContorller = async (
       error: null,
     });
   } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Something went wrong",
-      data: null,
-      error: error,
-    });
+    next(error);
   }
 };
 
@@ -121,12 +107,7 @@ const getListingByIdController = async (
         error: error.message,
       });
     }
-    return res.status(400).json({
-      success: false,
-      message: "Listing fetch error",
-      data: null,
-      error: error,
-    });
+    next(error);
   }
 };
 
@@ -162,7 +143,7 @@ const editListingController = async (
   }
   try {
     const editedListing = await editListing(result.data, listingId, userId);
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "Listing edited successfully",
       data: { editedListing },
@@ -204,8 +185,8 @@ const deleteListingContorller = async (
   const listingId = String(req.params.listingId);
   const userId = req.user!.userId;
   try {
-    const listingDeleted = await deleteListing(listingId, userId);
-    res.status(200).json({
+    await deleteListing(listingId, userId);
+    return res.status(200).json({
       success: true,
       message: "Listing deleted!",
       data: null,
@@ -276,6 +257,9 @@ const makeOfferContoller = async (
   res: Response,
   next: NextFunction,
 ) => {
+  const listingId = String(req.params.listingId);
+  const userId = req.user!.userId;
+
   const makeOfferDetail = makeOfferSchema.safeParse(req.body);
   if (!makeOfferDetail.success) {
     const { fieldErrors } = makeOfferDetail.error.flatten();
@@ -287,14 +271,14 @@ const makeOfferContoller = async (
     });
   }
   try {
-    const newOffer = await makeOffer(makeOfferDetail.data);
+    const newOffer = await makeOffer(makeOfferDetail.data, listingId, userId);
     return res.status(201).json({
       success: true,
       message: "Offer made successfully",
       data: newOffer,
       error: null,
     });
-  } catch (error: any) {
+  } catch (error) {
     next(error);
   }
 };

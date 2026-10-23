@@ -1,7 +1,7 @@
 import { loginUserSchema, type loginDataInput } from "@feriyo/shared";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -44,7 +44,7 @@ function Login() {
       auth.login(result.data.user, result.data.accessToken);
       navigate("/listings");
       toast.success("Logged in successfully");
-    } catch (error) {
+    } catch {
       setError("root", { message: "Something went wrong" });
     }
   };

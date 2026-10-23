@@ -1,6 +1,6 @@
 import { Navigate, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
 import { Link } from "react-router-dom";
 import {
   PaperAirplaneIcon,
@@ -9,9 +9,10 @@ import {
   CheckCircleIcon,
 } from "@heroicons/react/24/solid";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
-import { useSocket } from "../context/SocketProvider";
+import { useSocket } from "../context/socket-context";
 import MakeOfferModal from "../components/MakeOfferModal";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../utils/imageUrl";
 
 type ChatListItem = {
   listingId: string;
@@ -82,13 +83,11 @@ type Message = {
 
 type newMessageObj = {
   message: string;
-  userId: string;
   chatId: string;
 };
 
 type joinRoomData = {
   roomId: string;
-  userId: string;
 };
 
 function Chats() {
@@ -102,10 +101,6 @@ function Chats() {
   const auth = useAuth();
   const [isMakeModalOfferOpen, setIsMakeModalOfferOpen] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
-
-  if (!auth.isAuthLoading && !auth.user) {
-    <Navigate to="/login" replace />;
-  }
 
   const formatTime = (value: string | Date) => {
     if (!value) return "N/A";
@@ -138,17 +133,20 @@ function Chats() {
             },
           });
           const result = await response.json();
-          setChatList(result.data.chatList);
-        } catch (error) {
-          console.log(error);
-          setIsLoading(false);
+          if (!response.ok) {
+            toast.error(result.message || "Failed to load chats");
+            return;
+          }
+          setChatList(result.data?.chatList ?? []);
+        } catch {
+          toast.error("Failed to load chats");
         } finally {
           setIsLoading(false);
         }
       }
       fetchChatList();
     }
-  }, [auth.user]);
+  }, [auth.accessToken, auth.isAuthLoading, auth.user, BASE_URL]);
 
   useEffect(() => {
     if (auth.isAuthLoading || !auth.user || !chatId) return;
@@ -165,11 +163,14 @@ function Chats() {
           },
         });
         const result = await response.json();
+        if (!response.ok) {
+          toast.error(result.message || "Failed to load chat");
+          return;
+        }
         setChatData(result.data.chatData);
         setMessages(result.data.messages);
-      } catch (error) {
-        setIsLoading(false);
-        console.log(error);
+      } catch {
+        toast.error("Failed to load chat");
       } finally {
         setIsLoading(false);
       }
@@ -179,23 +180,33 @@ function Chats() {
     if (isConnected && socket) {
       const joinRoomData: joinRoomData = {
         roomId: chatId,
-        userId: auth.user.userId,
       };
       socket.emit("joinRoom", joinRoomData);
     }
-  }, [chatId, auth.accessToken, auth.isAuthLoading, isConnected, socket]);
+  }, [
+    BASE_URL,
+    chatId,
+    auth.accessToken,
+    auth.isAuthLoading,
+    auth.user,
+    isConnected,
+    socket,
+  ]);
 
   function handleSendMessage(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!socket || !isConnected || !chatId) {
+      toast.error("Not connected to chat");
+      return;
+    }
     if (messageInputRef.current) {
       const message = messageInputRef.current.value;
       if (message.trim()) {
         const newMessageData: newMessageObj = {
           message,
-          userId: auth.user!.userId,
-          chatId: chatId!,
+          chatId,
         };
-        socket?.emit("newMessage", newMessageData);
+        socket.emit("newMessage", newMessageData);
         messageInputRef.current.value = "";
       }
     }
@@ -224,6 +235,7 @@ function Chats() {
             },
           });
           const result = await response.json();
+          if (!response.ok) return;
           setChatData(result.data.chatData);
           setMessages(result.data.messages);
         };
@@ -231,6 +243,11 @@ function Chats() {
       }
     };
     socket.on("offerUpdated", handleOfferUpdated);
+
+    const handleSocketError = (message: string) => {
+      toast.error(message || "Chat connection error");
+    };
+    socket.on("errorMessage", handleSocketError);
 
     const handleOfferCreated = () => {
       if (chatId) {
@@ -245,6 +262,7 @@ function Chats() {
             },
           });
           const result = await response.json();
+          if (!response.ok) return;
           setChatData(result.data.chatData);
           setMessages(result.data.messages);
         };
@@ -257,6 +275,7 @@ function Chats() {
       socket.off("newMessage", handleNewMessage);
       socket.off("offerUpdated", handleOfferUpdated);
       socket.off("offerCreated", handleOfferCreated);
+      socket.off("errorMessage", handleSocketError);
     };
   }, [socket, isConnected, chatId, auth.accessToken, BASE_URL]);
 
@@ -300,12 +319,13 @@ function Chats() {
             },
           });
           const result = await response.json();
+          if (!response.ok) return;
           setChatData(result.data.chatData);
           setMessages(result.data.messages);
         };
         fetchChatData();
       }
-    } catch (err) {
+    } catch {
       toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
@@ -320,8 +340,13 @@ function Chats() {
     setIsLoading(true);
     setPriceError(null);
 
-    if (price === undefined || isNaN(price)) {
-      setPriceError("Please enter a valid price");
+    if (!chatData || !chatId) {
+      setPriceError("Chat is still loading");
+      setIsLoading(false);
+      return;
+    }
+    if (price === undefined || isNaN(price) || !Number.isInteger(price)) {
+      setPriceError("Please enter a valid whole number price");
       setIsLoading(false);
       return;
     }
@@ -331,7 +356,7 @@ function Chats() {
       return;
     }
 
-    const endPoint = `api/listings/${chatData?.listingId}/offer`;
+    const endPoint = `api/listings/${chatData.listingId}/offer`;
     const url = new URL(endPoint, BASE_URL);
 
     try {
@@ -344,8 +369,6 @@ function Chats() {
         },
         body: JSON.stringify({
           chatId,
-          listingId: chatData!.listingId,
-          proposedBy: auth.user?.userId,
           price,
         }),
       });
@@ -383,7 +406,6 @@ function Chats() {
 
       const result = await response.json();
       toast.success(result.message || "Offer made successfully");
-      console.log("Offer created:", result);
 
       // Refresh chat data and messages
       if (chatId) {
@@ -398,6 +420,7 @@ function Chats() {
             },
           });
           const result = await response.json();
+          if (!response.ok) return;
           setChatData(result.data.chatData);
           setMessages(result.data.messages);
         };
@@ -416,11 +439,17 @@ function Chats() {
     }
   }
 
+  if (!auth.isAuthLoading && !auth.user) {
+    return <Navigate to="/login" replace />;
+  }
+
   if (isLoading) {
-    <div className="flex-1 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2ACFCF]"></div>
-      <span className="ml-3 text-[#6F767E]">Loading conversation...</span>
-    </div>;
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2ACFCF]"></div>
+        <span className="ml-3 text-[#6F767E]">Loading conversation...</span>
+      </div>
+    );
   }
 
   return (
@@ -451,10 +480,10 @@ function Chats() {
                   src={
                     chatListItem.seller.username !== auth.user?.username
                       ? chatListItem.seller.avatarUrl
-                        ? `${import.meta.env.VITE_BASE_BACKEND_URL}${chatListItem.seller.avatarUrl}`
+                        ? getImageUrl(chatListItem.seller.avatarUrl)
                         : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatListItem.seller.username)}&background=4f46e5&color=fff&size=128`
                       : chatListItem.buyer.avatarUrl
-                        ? `${import.meta.env.VITE_BASE_BACKEND_URL}${chatListItem.buyer.avatarUrl}`
+                        ? getImageUrl(chatListItem.buyer.avatarUrl)
                         : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatListItem.buyer.username)}&background=4f46e5&color=fff&size=128`
                   }
                   alt="Profile"
@@ -485,7 +514,7 @@ function Chats() {
               <div className="shrink-0 ml-2">
                 <div className="relative">
                   <img
-                    src={`${import.meta.env.VITE_BASE_BACKEND_URL}${chatListItem.listing.imageUrls[0]}`}
+                    src={getImageUrl(chatListItem.listing.imageUrls[0])}
                     alt="thumbnail"
                     className="w-14 h-14 rounded-lg object-cover border border-[#333] group-hover:brightness-110 transition-all"
                   />
@@ -513,10 +542,10 @@ function Chats() {
                     src={
                       chatData.seller.username !== auth.user?.username
                         ? chatData.seller.avatarUrl
-                          ? `${import.meta.env.VITE_BASE_BACKEND_URL}${chatData.seller.avatarUrl}`
+                          ? getImageUrl(chatData.seller.avatarUrl)
                           : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.seller.username)}&background=4f46e5&color=fff&size=128`
                         : chatData.buyer.avatarUrl
-                          ? `${import.meta.env.VITE_BASE_BACKEND_URL}${chatData.buyer.avatarUrl}`
+                          ? getImageUrl(chatData.buyer.avatarUrl)
                           : `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.buyer.username)}&background=4f46e5&color=fff&size=128`
                     }
                     alt="Profile"
@@ -552,7 +581,7 @@ function Chats() {
                   {/* Product Image */}
                   <div className="shrink-0">
                     <img
-                      src={`${import.meta.env.VITE_BASE_BACKEND_URL}${chatData.listing.imageUrls[0]}`}
+                      src={getImageUrl(chatData.listing.imageUrls[0])}
                       alt="listing thumbnail"
                       className="w-10 h-10 rounded-md object-cover border border-[#333] group-hover:border-[#2ACFCF]/50 transition-colors"
                     />

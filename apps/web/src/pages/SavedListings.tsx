@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
+import toast from "react-hot-toast";
 
 type MyListingData = {
   listingId: string;
@@ -42,9 +43,13 @@ function SavedListings() {
           },
         });
         const result = await response.json();
+        if (!response.ok) {
+          toast.error(result.message || "Failed to load saved listings");
+          return;
+        }
         setListings(result.data || []);
-      } catch (error) {
-        console.error("Failed to load saved listings", error);
+      } catch {
+        toast.error("Failed to load saved listings");
       } finally {
         setLoading(false);
       }

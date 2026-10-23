@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "../context/AuthProvider.tsx";
+import { useAuth } from "../context/auth-context";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import {
   editListingSchema,
@@ -9,6 +9,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../utils/imageUrl";
 
 type previewImage = {
   id: string;
@@ -39,10 +40,6 @@ function EditListing() {
   const auth = useAuth();
   const navigate = useNavigate();
 
-  if (!auth.isAuthLoading && !auth.user) {
-    return <Navigate to="/login" replace />;
-  }
-
   useEffect(() => {
     setValue(
       "newListingImages",
@@ -66,7 +63,7 @@ function EditListing() {
         );
         const result = await response.json();
         if (!response.ok) {
-          return console.error(result.error);
+          return toast.error(result.message || "Failed to load listing");
         }
         setValue("title", result.data.title);
         setValue("description", result.data.description);
@@ -86,7 +83,7 @@ function EditListing() {
           },
         );
         setPreviewImages(existingImagesPreview);
-      } catch (error) {
+      } catch {
         toast.error("Something went wrong");
       }
     }
@@ -104,11 +101,11 @@ function EditListing() {
     formData.append("condition", data.condition);
     formData.append("isSold", String(data.isSold));
 
-    for (let image of data.newListingImages) {
+    for (const image of data.newListingImages) {
       formData.append("newListingImages", image);
     }
 
-    for (let url of data.removedListingImages) {
+    for (const url of data.removedListingImages) {
       formData.append("removedListingImages", url);
     }
 
@@ -143,11 +140,15 @@ function EditListing() {
       }
       toast.success(result.message);
       navigate(`/listings/${listingId}`);
-    } catch (error) {
-      toast.error("Something went worng");
+    } catch {
+      toast.error("Something went wrong");
       setError("root", { message: "Something went wrong" });
     }
   };
+
+  if (!auth.isAuthLoading && !auth.user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="max-w-6xl mx-auto py-10">
@@ -340,7 +341,7 @@ function EditListing() {
                     <img
                       src={
                         previewImage.isExisting
-                          ? `${import.meta.env.VITE_BASE_BACKEND_URL}${previewImage.imgUrl}`
+                          ? getImageUrl(previewImage.imgUrl)
                           : previewImage.imgUrl
                       }
                       alt="preview"

@@ -5,8 +5,7 @@ import {
   getChatData,
   getChatList,
 } from "../services/chat.services.js";
-import { log } from "node:console";
-import { NotFoundError } from "../errors/index.js";
+import { NotFoundError, UnauthorizedError } from "../errors/index.js";
 
 const getChatListController = async (
   req: Request,
@@ -24,12 +23,7 @@ const getChatListController = async (
       error: null,
     });
   } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Something went wrong",
-      data: null,
-      error: error,
-    });
+    next(error);
   }
 };
 
@@ -59,12 +53,6 @@ const contactSellerController = async (
       error: null,
     });
   } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Something went wrong",
-      data: null,
-      error: error,
-    });
     next(error);
   }
 };
@@ -75,8 +63,9 @@ const getChatDataController = async (
   next: NextFunction,
 ) => {
   const chatId = String(req.params.chatId);
+  const userId = req.user!.userId;
   try {
-    const { chatData, messages } = await getChatData(chatId);
+    const { chatData, messages } = await getChatData(chatId, userId);
     return res.status(200).json({
       success: true,
       message: "Chat data fetched successfully",
@@ -87,17 +76,20 @@ const getChatDataController = async (
     if (error instanceof NotFoundError) {
       return res.status(error.statusCode).json({
         success: false,
-        message: "Listing fetch Error",
+        message: "Chat fetch Error",
         data: null,
         error: error.message,
       });
     }
-    return res.status(400).json({
-      success: false,
-      message: "Data fetch error",
-      data: null,
-      error: error,
-    });
+    if (error instanceof UnauthorizedError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: "Chat access denied",
+        data: null,
+        error: error.message,
+      });
+    }
+    next(error);
   }
 };
 

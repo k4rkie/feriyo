@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { updateOfferStatus } from "../services/offer.services.js";
-import { UnauthorizedError } from "../errors/index.js";
+import { updateOfferStatusSchema } from "../validators/offer.validator.js";
 
 export const updateOfferStatusController = async (
   req: Request,
@@ -8,8 +8,19 @@ export const updateOfferStatusController = async (
   next: NextFunction,
 ) => {
   const offerId = String(req.params.offerId);
-  const { status } = req.body;
   const userId = req.user!.userId;
+
+  const parsedBody = updateOfferStatusSchema.safeParse(req.body);
+  if (!parsedBody.success) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid offer status",
+      data: null,
+      error: parsedBody.error.flatten().fieldErrors,
+    });
+  }
+
+  const { status } = parsedBody.data;
 
   try {
     const updatedOffer = await updateOfferStatus(offerId, status, userId);

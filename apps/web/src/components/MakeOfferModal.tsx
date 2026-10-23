@@ -38,6 +38,8 @@ function MakeOfferModal({
         >
           <input
             type="number"
+            min={1}
+            step={1}
             ref={offerPriceRef}
             placeholder="Enter the price"
             className="price-input w-full pl-4 pr-4 py-2 rounded-md 
@@ -61,6 +63,7 @@ function MakeOfferModal({
               </span>
             </button>
             <button
+              type="button"
               onClick={() => {
                 setPriceError(null);
                 setIsModalOpen(false);

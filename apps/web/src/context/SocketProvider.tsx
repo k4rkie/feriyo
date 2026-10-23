@@ -1,69 +1,52 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useRef,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Socket, io } from "socket.io-client";
-import { useAuth } from "./AuthProvider";
-
-type SocketContextType = {
-  socket: Socket | null;
-  isConnected: boolean;
-};
+import { useAuth } from "./auth-context";
+import { SocketContext, type SocketContextType } from "./socket-context";
 
 type SocketProviderPropType = {
   children: ReactNode;
 };
 
-const SocketContext = createContext<SocketContextType | null>(null);
-
 function SocketProvider({ children }: SocketProviderPropType) {
-  const socketRef = useRef<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const auth = useAuth();
+  const [connectedSocket, setConnectedSocket] = useState<Socket | null>(null);
 
-  useEffect(() => {
-    if (auth.accessToken) {
-      const socket = io(import.meta.env.VITE_BASE_BACKEND_URL, {
-        auth: {
-          accessToken: auth.accessToken,
-        },
-      });
-      socketRef.current = socket;
-      socket.on("connect", () => {
-        setIsConnected(true);
-      });
-      socket.on("disconnect", () => {
-        setIsConnected(false);
-      });
-    }
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        setIsConnected(false);
-        socketRef.current = null;
-      }
-    };
+  const socket = useMemo(() => {
+    if (!auth.accessToken) return null;
+
+    return io(import.meta.env.VITE_BASE_BACKEND_URL, {
+      autoConnect: false,
+      auth: {
+        accessToken: auth.accessToken,
+      },
+    });
   }, [auth.accessToken]);
 
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleConnect = () => setConnectedSocket(socket);
+    const handleDisconnect = () => setConnectedSocket(null);
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.connect();
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.disconnect();
+    };
+  }, [socket]);
+
   const value: SocketContextType = {
-    socket: socketRef.current,
-    isConnected,
+    socket,
+    isConnected: socket !== null && connectedSocket === socket,
   };
+
   return (
     <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
   );
 }
 
-function useSocket() {
-  const context = useContext(SocketContext);
-  if (!context) {
-    throw new Error("useSocket must be inside SocketProvider");
-  }
-  return context;
-}
-
-export { SocketProvider, useSocket };
+export { SocketProvider };

@@ -17,19 +17,18 @@ const protect = (req: Request, res: Response, next: NextFunction) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    const payload = jwt.decode(token);
     const decodedPayload = jwt.verify(
       token,
       process.env.ACCESS_TOKEN_SECRET!,
     ) as JwtPayload;
     req.user = { userId: String(decodedPayload.sub) };
     next();
-  } catch (error: any) {
+  } catch (error) {
     return res.status(401).json({
       success: false,
       message: "Session expired or invalid token",
       data: null,
-      error: error.message,
+      error: error instanceof Error ? error.message : "Invalid token",
     });
   }
 };
@@ -46,8 +45,8 @@ const attachUser = (req: Request, res: Response, next: NextFunction) => {
         process.env.ACCESS_TOKEN_SECRET!,
       ) as JwtPayload;
       req.user = { userId: String(decodedPayload.sub) };
-    } catch (error) {
-      //ignore the exception just set req.user to undefined
+    } catch {
+      req.user = undefined;
     }
   }
   next();

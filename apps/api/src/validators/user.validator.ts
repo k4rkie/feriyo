@@ -4,8 +4,18 @@ const MAX_FILE_SIZE = 5_242_880;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const editProfileSchema = z.object({
-  username: z.string().trim().min(3, "Username must be at least 3 characters"),
-  locationName: z.string().min(1, "Please enter your location").nullable(),
+  username: z
+    .string()
+    .trim()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username too long"),
+  locationName: z
+    .string()
+    .trim()
+    .max(100, "Location too long")
+    .nullable()
+    .optional()
+    .transform((value) => value || null),
   avatar: z
     .object({
       filename: z.string(),

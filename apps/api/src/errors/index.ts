@@ -7,7 +7,7 @@ class NotFoundError extends Error {
 }
 
 class UnauthorizedError extends Error {
-  statusCode = 403;
+  statusCode = 401;
   constructor(message: string) {
     super(message);
     this.name = "UnauthorizedError";
@@ -15,7 +15,7 @@ class UnauthorizedError extends Error {
 }
 
 class DBConstraintError extends Error {
-  statusCode = 400;
+  statusCode = 409;
   constructor(message: string) {
     super(message);
     this.name = "DBConstraintError";

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getImageUrl } from "../utils/imageUrl";
 
 type ListingCardProps = {
   listingId: string;
@@ -22,22 +23,15 @@ function ListingCard({
   authorName = "Unknown Seller",
   authorAvatarUrl = null,
 }: ListingCardProps) {
-  const BASE_URL =
-    import.meta.env.VITE_BASE_BACKEND_URL || "http://localhost:8000";
-
   const avatarUrl = authorAvatarUrl
-    ? `${BASE_URL}${authorAvatarUrl}`
+    ? getImageUrl(authorAvatarUrl)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=4f46e5&color=fff&size=64`;
 
   return (
     <Link to={`/listings/${listingId}`} className="group">
       <div className="bg-[#111111] border border-[#2A2A2A] rounded-lg overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-300">
         <img
-          src={
-            imageUrl[0]?.startsWith("http")
-              ? imageUrl[0]
-              : `${BASE_URL}${imageUrl[0]}`
-          }
+          src={getImageUrl(imageUrl[0])}
           alt={title}
           className="w-full h-48 object-cover"
         />

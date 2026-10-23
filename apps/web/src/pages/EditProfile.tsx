@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -8,6 +8,7 @@ import {
   type editProfileInput,
 } from "../validators/user.validator.ts";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../utils/imageUrl";
 
 function EditProfile() {
   const navigate = useNavigate();
@@ -39,17 +40,15 @@ function EditProfile() {
         );
         const result = await response.json();
         if (!response.ok) {
-          return console.error(result.error);
+          return toast.error(result.message || "Failed to load profile");
         }
         const profile = result.data.userProfileData;
         setValue("username", profile.username);
         setValue("locationName", profile.locationName);
         if (profile.avatarUrl) {
-          setPreviewUrl(
-            `${import.meta.env.VITE_BASE_BACKEND_URL}${profile.avatarUrl}`,
-          );
+          setPreviewUrl(getImageUrl(profile.avatarUrl));
         }
-      } catch (error) {
+      } catch {
         toast.error("Something went wrong while fetching profile");
       }
     }
@@ -102,7 +101,7 @@ function EditProfile() {
       // Update local auth state to reflect changes globally (like in Navbar)
       auth.updateUser(result.data);
       navigate(`/users/${result.data.username}`);
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong");
     }
   };

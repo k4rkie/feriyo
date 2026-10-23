@@ -37,7 +37,7 @@ async function seed() {
 
   // 2. Prepare Data Constants
   const count = 300;
-  const dummyImagePath = "/uploads/listings/images/dummyImage.jpg";
+  const dummyImagePath = "https://placehold.co/600x400?text=Feriyo";
 
   // Extract values from Drizzle Enums
   const categories = categoryEnum.enumValues;

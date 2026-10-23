@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 
 type authorInfo = {
   userId: string;
@@ -21,52 +22,62 @@ type ListingData = {
 };
 
 function Listings() {
-  const [listings, setListings] = useState<ListingData[] | null>(null);
+  const [listings, setListings] = useState<ListingData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pageHeading, setPageHeading] = useState("All listings");
-  const [searchParams] = useSearchParams();
   const [totalPages, setTotalPages] = useState(1);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const currentPage =
-    searchParams.get("page") === null ? 1 : Number(searchParams.get("page"));
+  const currentPage = Math.max(
+    1,
+    Number(searchParams.get("page") ?? 1) || 1,
+  );
+  const category = searchParams.get("category");
+  const search = searchParams.get("search");
+
+  const pageHeading = search
+    ? `Results for: ${search}`
+    : category
+      ? category.charAt(0).toUpperCase() + category.slice(1)
+      : "All listings";
 
   const BASE_URL: string = import.meta.env.VITE_BASE_BACKEND_URL;
-  const endPoint = `api/listings?page=${currentPage}`;
-  const url = new URL(endPoint, BASE_URL);
 
   useEffect(() => {
     const fetchListings = async () => {
       setLoading(true);
-      const category = searchParams.get("category");
-      const search = searchParams.get("search");
+      const params = new URLSearchParams();
+      params.set("page", String(currentPage));
+      if (category) params.set("category", category);
+      if (search) params.set("search", search);
 
-      if (category) {
-        url.searchParams.append("category", category);
-        setPageHeading(
-          `${category.charAt(0).toUpperCase() + category.slice(1)}`,
-        );
-      }
-      if (search) {
-        url.searchParams.append("search", search);
-        setPageHeading(`Results for: ${search}`);
-      }
-      if (!category && !search) {
-        setPageHeading("All listings");
-      }
       try {
-        const response = await fetch(url.toString());
+        const response = await fetch(
+          `${BASE_URL}/api/listings?${params.toString()}`,
+        );
         const result = await response.json();
-        setListings(result.data || null);
-        setTotalPages(result.meta.totalPages);
-      } catch (error) {
-        console.error("Failed to load listings", error);
+
+        if (!response.ok) {
+          toast.error(result.message || "Failed to load listings");
+          return;
+        }
+
+        setListings(result.data ?? []);
+        setTotalPages(result.meta?.totalPages ?? 1);
+      } catch {
+        toast.error("Failed to load listings");
       } finally {
         setLoading(false);
       }
     };
     fetchListings();
-  }, [searchParams, currentPage]);
+  }, [BASE_URL, category, currentPage, search]);
+
+  const goToPage = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", String(page));
+    navigate(`/listings?${params.toString()}`);
+  };
 
   if (loading) {
     return (
@@ -80,7 +91,7 @@ function Listings() {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-5 text-[#E5E5E5]">{pageHeading}</h1>
-      {!listings ? (
+      {listings.length === 0 ? (
         <div className="text-[#A1A1A1]">No listings found.</div>
       ) : (
         <>
@@ -101,31 +112,21 @@ function Listings() {
           </section>
           <footer className="flex w-full justify-center">
             <button
-              className="ml-2 px-3 py-2 rounded-md bg-[#2ACFCF] text-[#111111] hover:bg-[#26BABA] transition-colors duration-300 cursor-pointer"
+              className="ml-2 px-3 py-2 rounded-md bg-[#2ACFCF] text-[#111111] hover:bg-[#26BABA] transition-colors duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               title="Prev"
-              onClick={() => {
-                if (currentPage === 1) {
-                  return;
-                }
-                navigate(`/listings?page=${currentPage - 1}`);
-                return currentPage - 1;
-              }}
+              onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
             >
               {" < "}
             </button>
             <span className="ml-2 px-3 py-2 rounded-md border-1 bg-[#1A1A1A] text-[#E5E5E5] border-[#919191]">
-              {currentPage}
+              {currentPage} / {totalPages}
             </span>
             <button
-              className="ml-2 px-3 py-2 rounded-md bg-[#2ACFCF] text-[#111111] hover:bg-[#26BABA] transition-colors duration-300 cursor-pointer"
+              className="ml-2 px-3 py-2 rounded-md bg-[#2ACFCF] text-[#111111] hover:bg-[#26BABA] transition-colors duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               title="Next"
-              onClick={() => {
-                if (currentPage === totalPages) return;
-                navigate(`/listings?page=${currentPage + 1}`);
-                return currentPage + 1;
-              }}
-              disabled={totalPages === currentPage}
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage >= totalPages}
             >
               {" > "}
             </button>

@@ -8,10 +8,8 @@ const userProfileController = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log("Req params: ", req.params);
   try {
     const { username } = req.params;
-    console.log("Username: ", username);
     const userId = req.user?.userId;
     if (!username) {
       return res.status(400).json({
@@ -22,7 +20,7 @@ const userProfileController = async (
       });
     }
     const profileData = await getUserProfile(String(username), userId);
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "User profile fetched successfully",
       data: { ...profileData },

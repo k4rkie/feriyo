@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { signUpUserSchema, type signupDataInput } from "@feriyo/shared";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
 
 function Signup() {
   const {
@@ -44,7 +44,7 @@ function Signup() {
       }
       auth.login(result.data.user, result.data.accessToken);
       navigate("/listings");
-    } catch (error) {
+    } catch {
       setError("root", { message: "Something went wrong" });
     }
   };

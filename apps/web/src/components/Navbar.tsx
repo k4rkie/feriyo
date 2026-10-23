@@ -4,10 +4,11 @@ import {
   ChatBubbleBottomCenterTextIcon,
   BellIcon,
 } from "@heroicons/react/24/outline";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
 import ProfileDrowpdown from "./ProfileDrowpdown";
 import { useRef, useState } from "react";
 import Notifications from "./Notifications";
+import { getImageUrl } from "../utils/imageUrl";
 
 const Navbar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -27,7 +28,7 @@ const Navbar = () => {
   };
   const auth = useAuth();
   const avatarUrl = auth.user?.avatarUrl
-    ? `${import.meta.env.VITE_BASE_BACKEND_URL}${auth.user.avatarUrl}`
+    ? getImageUrl(auth.user.avatarUrl)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user?.username || "User")}&background=4f46e5&color=fff&size=128`;
 
   return (

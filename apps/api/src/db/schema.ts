@@ -12,6 +12,7 @@ import {
   uuid,
   unique,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 
 const usersTable = pgTable("users", {
@@ -75,7 +76,12 @@ const listingsTable = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => [check("price_check", sql`${table.price} > 0`)],
+  (table) => [
+    check("price_check", sql`${table.price} > 0`),
+    index("listings_author_id_idx").on(table.authorId),
+    index("listings_status_created_at_idx").on(table.status, table.createdAt),
+    index("listings_category_status_idx").on(table.category, table.status),
+  ],
 );
 
 export const listingsRelations = relations(listingsTable, ({ one, many }) => ({
@@ -104,34 +110,47 @@ const chatsTable = pgTable(
       .notNull(),
     createdAt: timestamp("created_at").defaultNow(),
   },
-  (table) => ({
-    unqConvoConstraint: unique("unique_conv_idx").on(
+  (table) => [
+    unique("unique_conv_idx").on(
       table.listingId,
       table.buyerId,
       table.sellerId,
     ),
-  }),
+    index("chats_buyer_id_idx").on(table.buyerId),
+    index("chats_seller_id_idx").on(table.sellerId),
+    index("chats_listing_id_idx").on(table.listingId),
+  ],
 );
 
-const messagesTable = pgTable("messages", {
-  messageId: uuid("message_id").primaryKey().defaultRandom(),
-  chatId: uuid("chat_id")
-    .references(() => chatsTable.chatId, {
-      onDelete: "cascade",
-    })
-    .notNull(),
-  senderId: uuid("sender_id")
-    .references(() => usersTable.userId)
-    .notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+const messagesTable = pgTable(
+  "messages",
+  {
+    messageId: uuid("message_id").primaryKey().defaultRandom(),
+    chatId: uuid("chat_id")
+      .references(() => chatsTable.chatId, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    senderId: uuid("sender_id")
+      .references(() => usersTable.userId)
+      .notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("messages_chat_id_created_at_idx").on(
+      table.chatId,
+      table.createdAt,
+    ),
+  ],
+);
 
 export const offerStatusEnum = pgEnum("offer_status", [
   "pending",
   "accepted",
   "rejected",
   "cancelled",
+  "expired",
 ]);
 
 const offersTable = pgTable(
@@ -158,6 +177,8 @@ const offersTable = pgTable(
     uniqueIndex("unique_pending_offer_idx")
       .on(table.chatId)
       .where(sql`${table.status} = 'pending'`),
+    index("offers_chat_id_status_idx").on(table.chatId, table.status),
+    index("offers_status_expire_at_idx").on(table.status, table.expireAt),
   ],
 );
 
@@ -201,12 +222,10 @@ const savedListingsTable = pgTable(
       .notNull(),
     createdAt: timestamp("created_at").defaultNow(),
   },
-  (table) => ({
-    unqSaveConstraint: unique("unique_save_idx").on(
-      table.userId,
-      table.listingId,
-    ),
-  }),
+  (table) => [
+    unique("unique_save_idx").on(table.userId, table.listingId),
+    index("saved_listings_user_id_idx").on(table.userId),
+  ],
 );
 
 export const savedListingsRelations = relations(

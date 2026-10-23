@@ -36,6 +36,20 @@
       "when": 1778247594840,
       "tag": "0004_yellow_expediter",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792764032464,
+      "tag": "0005_flat_puma",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792765599885,
+      "tag": "0006_blushing_spiral",
+      "breakpoints": true
     }
   ]
 }

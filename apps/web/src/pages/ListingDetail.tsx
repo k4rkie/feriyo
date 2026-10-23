@@ -6,11 +6,10 @@ import {
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { BookmarkIcon as BookmarkSolid } from "@heroicons/react/24/solid";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/auth-context";
 import toast from "react-hot-toast";
 import ConfirmationModal from "../components/ConfirmationModal";
-import { useSocket } from "../context/SocketProvider";
-
+import { getImageUrl } from "../utils/imageUrl";
 type AuthorInfo = {
   userId: string;
   username: string;
@@ -38,13 +37,12 @@ function ListingDetail() {
   const [listing, setListing] = useState<ListingDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
-  const [isUserAuthor, setIsUserAuthor] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const auth = useAuth();
   const navigate = useNavigate();
-  const { isConnected } = useSocket();
+  const isUserAuthor = auth.user?.userId === listing?.authorInfo.userId;
 
   useEffect(() => {
     if (auth.user && listingId) {
@@ -60,11 +58,11 @@ function ListingDetail() {
           const result = await response.json();
           const savedListings = result.data || [];
           const currentlySaved = savedListings.some(
-            (item: any) => item.listingId === listingId,
+            (item: { listingId: string }) => item.listingId === listingId,
           );
           setIsSaved(currentlySaved);
-        } catch (error) {
-          console.error("Failed to check saved status", error);
+        } catch {
+          setIsSaved(false);
         }
       };
       checkIsSaved();
@@ -86,17 +84,18 @@ function ListingDetail() {
         },
       );
       const result = await response.json();
-      if (response.ok) {
-        setIsSaved(result.data.saved);
-        toast.success(result.message);
+      if (!response.ok) {
+        return toast.error(result.message || "Failed to update saved status");
       }
-    } catch (error) {
+      setIsSaved(result.data.saved);
+      toast.success(result.message);
+    } catch {
       toast.error("Failed to update saved status");
     }
   }
 
   const avatarUrl = listing?.authorInfo.avatarUrl
-    ? `${import.meta.env.VITE_BASE_BACKEND_URL}${listing.authorInfo.avatarUrl}`
+    ? getImageUrl(listing.authorInfo.avatarUrl)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(listing?.authorInfo.username ?? "User")}&background=4f46e5&color=fff&size=128`;
 
   const formatDate = (value: string | Date) => {
@@ -130,8 +129,8 @@ function ListingDetail() {
         );
         const result = await response.json();
         setListing(result.data || null);
-      } catch (error) {
-        console.error("Unable to load listing detail", error);
+      } catch {
+        toast.error("Unable to load listing detail");
       } finally {
         setLoading(false);
       }
@@ -139,12 +138,6 @@ function ListingDetail() {
 
     fetchListing();
   }, [listingId, auth.user?.userId]);
-
-  useEffect(() => {
-    if (auth.user && listing) {
-      setIsUserAuthor(auth.user.userId === listing.authorInfo.userId);
-    }
-  }, [auth.user, listing]);
 
   if (loading) {
     return (
@@ -173,7 +166,7 @@ function ListingDetail() {
       }
       navigate("/listings");
       toast.success(`${result.message}`);
-    } catch (error) {
+    } catch {
       return toast.error("Something went wrong");
     }
   }
@@ -182,28 +175,26 @@ function ListingDetail() {
     if (!auth.accessToken) {
       return navigate("/login");
     }
-    if (isConnected) {
-      const BASE_URL: string = import.meta.env.VITE_BASE_BACKEND_URL;
-      const endPoint = `api/chats`;
-      const url = new URL(endPoint, BASE_URL);
-      const response = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          Authorization: `Bearer ${auth.accessToken}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_BACKEND_URL}/api/chats`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${auth.accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ listingId }),
         },
-        body: JSON.stringify({
-          listingId,
-          sellerId: listing?.authorInfo.userId,
-        }),
-      });
-      if (!response.ok) {
-        return toast.error("Something went wrong");
-      }
+      );
       const result = await response.json();
-      const chatId = result.data.chatId;
-      navigate(`/chats/${chatId}`);
+      if (!response.ok) {
+        return toast.error(result.message || "Something went wrong");
+      }
+      navigate(`/chats/${result.data.chatId}`);
+    } catch {
+      toast.error("Something went wrong");
     }
   }
 
@@ -258,7 +249,7 @@ function ListingDetail() {
             {listing.imageUrls.length > 0 ? (
               <div className="h-full w-full flex items-center justify-center bg-[#111111]">
                 <img
-                  src={`${import.meta.env.VITE_BASE_BACKEND_URL}${listing.imageUrls[currentImageIdx]}`}
+                  src={getImageUrl(listing.imageUrls[currentImageIdx])}
                   alt={`Listing image ${currentImageIdx + 1}`}
                   className="max-h-full max-w-full object-contain"
                 />

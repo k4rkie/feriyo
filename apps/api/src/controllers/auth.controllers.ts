@@ -38,9 +38,24 @@ const signupController = async (req: Request, res: Response) => {
       data: { user: newUser, accessToken },
       error: null,
     });
-  } catch (error: any) {
-    const isEmailError = error.message.includes("email already exists");
-    const isUsernameError = error.message.includes("Username already taken");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const isEmailError = message.includes("email already exists");
+    const isUsernameError = message.includes("Username already taken");
+    const dbCode =
+      (error as { code?: string }).code ??
+      (error as { cause?: { code?: string } }).cause?.code;
+
+    if (dbCode === "23505") {
+      return res.status(409).json({
+        success: false,
+        message: "Registration failed",
+        data: null,
+        error: {
+          email: ["Email or username already exists"],
+        },
+      });
+    }
 
     if (isEmailError || isUsernameError) {
       return res.status(409).json({
@@ -59,7 +74,7 @@ const signupController = async (req: Request, res: Response) => {
       success: false,
       message: "Internal server error",
       data: null,
-      error: error,
+      error: null,
     });
   }
 };
@@ -93,18 +108,19 @@ const loginController = async (req: Request, res: Response) => {
       data: { user: loggedInUser, accessToken },
       error: null,
     });
-  } catch (error: any) {
-    const isEmailErrorOrPasswordError = error.message.includes(
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const isEmailErrorOrPasswordError = message.includes(
       "Invalid email or password",
     );
 
     if (isEmailErrorOrPasswordError) {
-      return res.status(409).json({
+      return res.status(401).json({
         success: false,
         message: "Login failed",
         data: null,
         error: {
-          root: ["Invalid email or passowrd"],
+          root: ["Invalid email or password"],
         },
       });
     }
@@ -155,12 +171,12 @@ const refreshController = async (req: Request, res: Response) => {
       },
       error: null,
     });
-  } catch (error: any) {
+  } catch (error) {
     return res.status(403).json({
       success: false,
       message: "Session expired or invalid",
       data: null,
-      error: error.message,
+      error: error instanceof Error ? error.message : "Invalid token",
     });
   }
 };
@@ -170,7 +186,7 @@ const logoutController = (req: Request, res: Response) => {
     path: "/api/auth",
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: true,
+    sameSite: "strict",
   });
 
   return res.status(200).json({

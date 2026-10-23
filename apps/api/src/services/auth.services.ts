@@ -1,7 +1,6 @@
 import { db } from "../db/db.js";
 import { usersTable } from "../db/schema.js";
 import type { signupDataInput, loginDataInput } from "@feriyo/shared";
-import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { eq, or } from "drizzle-orm";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";

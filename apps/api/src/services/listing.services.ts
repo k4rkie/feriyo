@@ -1,12 +1,16 @@
 import { and, count, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db.js";
-import { listingsTable, offersTable } from "../db/schema.js";
+import {
+  chatsTable,
+  listingsTable,
+  offersTable,
+  usersTable,
+} from "../db/schema.js";
 import type {
   createListingInput,
   editListingInput,
   makeOfferDetail,
 } from "../validators/listings.validator.js";
-import { getUserInfo } from "./auth.services.js";
 import {
   DBConstraintError,
   NotFoundError,
@@ -14,37 +18,18 @@ import {
   BadRequestError,
 } from "../errors/index.js";
 import { io } from "../chat/chat.js";
-
-type authorInfo = {
-  userId: string;
-  username: string;
-  email: string;
-};
-
-type listingsData = {
-  listingId: string;
-  title: string;
-  description: string | null;
-  status: string;
-  price: number;
-  authorId: string;
-  imageUrls: string[];
-};
-
-type getListingsData = {
-  listingId: string;
-  title: string;
-  description: string | null;
-  price: number;
-  status: string;
-  authorId: string;
-  imageUrls: string[];
-  authorInfo: authorInfo;
-};
+import { expireOffers } from "./offer.services.js";
 
 type queryParams = {
-  category: any;
-  search: any;
+  category:
+    | "electronics"
+    | "education"
+    | "fashion"
+    | "furniture"
+    | "vehicle"
+    | "others"
+    | "";
+  search: string;
   page: number;
 };
 
@@ -52,14 +37,10 @@ const getListings = async (queryParams: queryParams) => {
   const { category, search, page } = queryParams;
   const pageSize = 32;
 
-  if (page <= 0) {
-    throw new Error("Invalid page number");
-  }
+  await expireOffers();
 
-  // Create a base filter: only show available or pending items
   const filters = [inArray(listingsTable.status, ["available", "pending"])];
 
-  // Add more filters if category or search are provided
   if (category) {
     filters.push(eq(listingsTable.category, category));
   }
@@ -67,42 +48,39 @@ const getListings = async (queryParams: queryParams) => {
     filters.push(ilike(listingsTable.title, `%${search}%`));
   }
 
-  // Fetch the filtered listings
-  const listings = await db
+  const rows = await db
     .select({
-      listingId: listingsTable.listingId,
-      title: listingsTable.title,
-      description: listingsTable.description,
-      price: listingsTable.price,
-      status: listingsTable.status,
-      authorId: listingsTable.authorId,
-      imageUrls: listingsTable.imageUrls,
+      listing: listingsTable,
+      authorUsername: usersTable.username,
+      authorEmail: usersTable.email,
+      authorAvatarUrl: usersTable.avatarUrl,
     })
     .from(listingsTable)
-    .orderBy(desc(listingsTable.createdAt))
+    .innerJoin(usersTable, eq(listingsTable.authorId, usersTable.userId))
     .where(and(...filters))
+    .orderBy(desc(listingsTable.createdAt))
     .limit(pageSize)
     .offset((page - 1) * pageSize);
 
-  // Fetch the total count using the SAME filters
   const [{ totalCount }] = await db
     .select({ totalCount: count() })
     .from(listingsTable)
     .where(and(...filters));
 
-  let listingsWithUserInfo: getListingsData[] = [];
-  async function attachAuthorInfo() {
-    for (let listing of listings) {
-      const authorInfo = await getUserInfo(listing.authorId);
-      listingsWithUserInfo.push({ ...listing, authorInfo });
-    }
-  }
-  await attachAuthorInfo();
+  const listingsWithUserInfo = rows.map((row) => ({
+    ...row.listing,
+    authorInfo: {
+      userId: row.listing.authorId,
+      username: row.authorUsername,
+      email: row.authorEmail,
+      avatarUrl: row.authorAvatarUrl,
+    },
+  }));
 
   return {
     listingsWithUserInfo,
     totalCount,
-    totalPages: Math.ceil(totalCount / pageSize),
+    totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
   };
 };
 
@@ -151,20 +129,33 @@ const createListing = async (
 };
 
 const getListingById = async (listingId: string) => {
-  const [listing] = await db
-    .select()
+  const [row] = await db
+    .select({
+      listing: listingsTable,
+      authorUsername: usersTable.username,
+      authorEmail: usersTable.email,
+      authorAvatarUrl: usersTable.avatarUrl,
+    })
     .from(listingsTable)
-    .where(eq(listingsTable.listingId, listingId));
+    .innerJoin(usersTable, eq(listingsTable.authorId, usersTable.userId))
+    .where(eq(listingsTable.listingId, listingId))
+    .limit(1);
 
-  if (!listing) {
+  if (!row) {
     throw new NotFoundError(
       `Cannot find a listing with the provided ID: ${listingId}`,
     );
   }
 
-  const authorInfo = await getUserInfo(listing.authorId);
-  const listingsWithUserInfo = { ...listing, authorInfo };
-  return listingsWithUserInfo;
+  return {
+    ...row.listing,
+    authorInfo: {
+      userId: row.listing.authorId,
+      username: row.authorUsername,
+      email: row.authorEmail,
+      avatarUrl: row.authorAvatarUrl,
+    },
+  };
 };
 
 const editListing = async (
@@ -266,20 +257,39 @@ const deleteListing = async (listingId: string, userId: string) => {
 };
 
 const myListings = async (userId: string) => {
-  try {
-    const myListings = await db
-      .select()
-      .from(listingsTable)
-      .where(eq(listingsTable.authorId, userId));
-
-    return myListings || [];
-  } catch (error) {
-    throw new Error("Error while fetching my listings");
-  }
+  return db
+    .select()
+    .from(listingsTable)
+    .where(eq(listingsTable.authorId, userId))
+    .orderBy(desc(listingsTable.createdAt));
 };
 
-const makeOffer = async (offerDetails: makeOfferDetail) => {
-  const { chatId, proposedBy, price, listingId } = offerDetails;
+const makeOffer = async (
+  offerDetails: makeOfferDetail,
+  listingId: string,
+  userId: string,
+) => {
+  const { chatId, price } = offerDetails;
+
+  await expireOffers();
+
+  const [chat] = await db
+    .select()
+    .from(chatsTable)
+    .where(eq(chatsTable.chatId, chatId))
+    .limit(1);
+
+  if (!chat) {
+    throw new NotFoundError("Chat not found");
+  }
+
+  if (chat.buyerId !== userId && chat.sellerId !== userId) {
+    throw new UnauthorizedError("You are not a participant in this chat");
+  }
+
+  if (chat.listingId !== listingId) {
+    throw new BadRequestError("Listing does not belong to this chat");
+  }
 
   const [listing] = await db
     .select()
@@ -300,7 +310,7 @@ const makeOffer = async (offerDetails: makeOfferDetail) => {
       .insert(offersTable)
       .values({
         chatId,
-        proposedBy,
+        proposedBy: userId,
         price,
         status: "pending",
         expireAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
@@ -321,8 +331,9 @@ const makeOffer = async (offerDetails: makeOfferDetail) => {
     }
 
     return newoffer;
-  } catch (err: any) {
-    if (err.cause.code === "23505") {
+  } catch (err) {
+    const dbCode = (err as { cause?: { code?: string } }).cause?.code;
+    if (dbCode === "23505") {
       throw new DBConstraintError(
         "There is already a pending offer in this chat",
       );

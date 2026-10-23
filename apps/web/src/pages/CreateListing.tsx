@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthProvider.tsx";
+import { useAuth } from "../context/auth-context";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import {
   createListingSchema,
@@ -32,10 +32,6 @@ function CreateListing() {
 
   const auth = useAuth();
   const navigate = useNavigate();
-
-  if (!auth.isAuthLoading && !auth.user) {
-    <Navigate to="/login" replace />;
-  }
 
   useEffect(() => {
     setValue(
@@ -86,12 +82,15 @@ function CreateListing() {
       }
       toast.success("New Listing Created");
       navigate("/listings");
-    } catch (error) {
-      toast.error("Something went worng");
+    } catch {
+      toast.error("Something went wrong");
       setError("root", { message: "Something went wrong" });
-      console.log(error);
     }
   };
+
+  if (!auth.isAuthLoading && !auth.user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="max-w-6xl mx-auto py-10">
