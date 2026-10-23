@@ -3,12 +3,6 @@ import ListingCard from "../components/ListingCard";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
 
-type authorInfo = {
-  userId: string;
-  username: string;
-  email: string;
-};
-
 type MyListingData = {
   listingId: string;
   title: string;

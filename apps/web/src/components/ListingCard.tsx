@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { UserCircleIcon } from "@heroicons/react/24/outline";
 
 type ListingCardProps = {
   listingId: string;

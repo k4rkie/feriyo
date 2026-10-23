@@ -6,7 +6,7 @@ export const toggleSaveController = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const { listingId } = req.params;
+  const listingId = String(req.params.listingId);
   const userId = req.user!.userId;
 
   try {

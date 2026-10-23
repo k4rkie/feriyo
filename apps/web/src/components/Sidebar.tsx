@@ -4,7 +4,6 @@ import {
   QueueListIcon,
   UserIcon,
   BookmarkIcon,
-  MapPinIcon,
   PlusIcon,
   ChevronRightIcon,
   ChevronDownIcon,

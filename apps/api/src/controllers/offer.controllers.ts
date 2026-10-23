@@ -7,7 +7,7 @@ export const updateOfferStatusController = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const { offerId } = req.params;
+  const offerId = String(req.params.offerId);
   const { status } = req.body;
   const userId = req.user!.userId;
 
