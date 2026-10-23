@@ -19,6 +19,7 @@ import {
 } from "../errors/index.js";
 import { io } from "../chat/chat.js";
 import { expireOffers } from "./offer.services.js";
+import { uploadImage } from "../utils/cloudinary.js";
 
 type queryParams = {
   category:
@@ -98,9 +99,11 @@ const createListing = async (
     listingImages,
   } = createListingData;
 
-  const imageUrls = listingImages.map((image) => {
-    return `/uploads/listings/images/${image.filename}`;
-  });
+  const imageUrls = await Promise.all(
+    listingImages.map((image) =>
+      uploadImage(image.buffer, "feriyo/listings/images"),
+    ),
+  );
 
   const [newListing] = await db
     .insert(listingsTable)
@@ -197,9 +200,11 @@ const editListing = async (
     imageUrls = imageUrls.filter((url) => url !== image);
   }
 
-  const newImageUrls = newListingImages.map((image) => {
-    return `/uploads/listings/images/${image.filename}`;
-  });
+  const newImageUrls = await Promise.all(
+    newListingImages.map((image) =>
+      uploadImage(image.buffer, "feriyo/listings/images"),
+    ),
+  );
 
   imageUrls = [...imageUrls, ...newImageUrls];
 

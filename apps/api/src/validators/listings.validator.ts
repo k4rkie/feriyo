@@ -31,7 +31,6 @@ const createListingSchema = z.object({
   listingImages: z
     .array(
       z.object({
-        filename: z.string(),
         originalname: z.string(),
         mimetype: z
           .string()
@@ -42,7 +41,7 @@ const createListingSchema = z.object({
         size: z
           .number()
           .refine((size) => size <= MAX_FILE_SIZE, "Max image size is 5MB"),
-        path: z.string(),
+        buffer: z.instanceof(Buffer),
       }),
     )
     .min(1, "At least one image required")
@@ -65,7 +64,6 @@ const editListingSchema = z.object({
   newListingImages: z
     .array(
       z.object({
-        filename: z.string(),
         originalname: z.string(),
         mimetype: z
           .string()
@@ -76,7 +74,7 @@ const editListingSchema = z.object({
         size: z
           .number()
           .refine((size) => size <= MAX_FILE_SIZE, "Max image size is 5MB"),
-        path: z.string(),
+        buffer: z.instanceof(Buffer),
       }),
     )
     .max(5, "Maximum 5 images allowed")

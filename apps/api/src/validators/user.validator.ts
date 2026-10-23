@@ -18,7 +18,6 @@ const editProfileSchema = z.object({
     .transform((value) => value || null),
   avatar: z
     .object({
-      filename: z.string(),
       originalname: z.string(),
       mimetype: z
         .string()
@@ -29,7 +28,7 @@ const editProfileSchema = z.object({
       size: z
         .number()
         .refine((size) => size <= MAX_FILE_SIZE, "Max image size is 5MB"),
-      path: z.string(),
+      buffer: z.instanceof(Buffer),
     })
     .nullable()
     .optional(),

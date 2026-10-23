@@ -14,7 +14,7 @@
 - **Have a profile** — every user gets a public page with their avatar and their listings.
 
 > [!NOTE]  
-> This was an early learning project and has been forzen at v1 so contains bad beginner practices(N+1 queries, local upload stores .etc).
+> This started as an early learning project and has since been cleaned up and hardened.
 
 ---
 
@@ -28,7 +28,7 @@
 | Live chat | Socket.IO | Makes messages show up instantly |
 | Staying logged in | JWT (access + refresh tokens) | Proves who you are on each request, without logging in again every hour |
 | Input checking | Zod | Rejects badly-shaped data before it can reach the database |
-| Photo uploads | Multer | Saves listing photos sent from the browser |
+| Photo uploads | Multer + Cloudinary | Receives listing photos from the browser and stores them in Cloudinary |
 
 This is a **pnpm monorepo** with three packages:
 
@@ -70,7 +70,7 @@ cp apps/web/.env.example apps/web/.env
 ```
 
 - `.env` — Postgres user/password/db for docker-compose
-- `apps/api/.env` — PORT, DATABASE_URL, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, FRONTEND_URL
+- `apps/api/.env` — PORT, DATABASE_URL, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, FRONTEND_URL, CLOUDINARY_URL (required for uploads)
 - `apps/web/.env` — VITE_BASE_BACKEND_URL (point to the api, e.g. `http://localhost:8000`)
 
 Generate secrets with:
@@ -94,13 +94,13 @@ pnpm install
 **5. Create tables**
 
 ```bash
-pnpm --filter @feriyo/api exec drizzle-kit push --config ./src/db/drizzle.config.ts
+pnpm migrate
 ```
 
 Optional seed:
 
 ```bash
-pnpm --filter @feriyo/api exec tsx src/db/seed.ts
+pnpm seed
 ```
 
 **6. Run**

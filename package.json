@@ -2,10 +2,20 @@
   "name": "feriyo",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "pnpm@11.27.0",
+  "engines": {
+    "node": ">=20"
+  },
   "description": "Feriyo is a second-hand marketplace platform where users can list, browse, and purchase used items.",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm --filter @feriyo/api dz-studio & pnpm run -r --parallel --aggregate-output dev"
+    "dev": "pnpm --filter @feriyo/api dz-studio & pnpm run -r --parallel --aggregate-output dev",
+    "build": "pnpm --filter @feriyo/web build",
+    "start": "pnpm --filter @feriyo/api start",
+    "migrate": "pnpm --filter @feriyo/api migrate",
+    "seed": "pnpm --filter @feriyo/api seed",
+    "lint": "pnpm --filter @feriyo/web lint",
+    "typecheck": "pnpm --filter @feriyo/api build && pnpm --filter @feriyo/web build"
   },
   "repository": {
     "type": "git",

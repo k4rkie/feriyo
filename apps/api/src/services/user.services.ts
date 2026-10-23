@@ -3,6 +3,7 @@ import { db } from "../db/db.js";
 import { usersTable } from "../db/schema.js";
 import { NotFoundError } from "../errors/index.js";
 import type { editProfileInput } from "../validators/user.validator.js";
+import { uploadImage } from "../utils/cloudinary.js";
 
 const getUserProfile = async (username: string, userId: string | undefined) => {
   const user = await db.query.usersTable.findFirst({
@@ -63,7 +64,7 @@ const editProfile = async (
 
   let avatarUrl = existingUser.avatarUrl;
   if (avatar) {
-    avatarUrl = `/uploads/images/useravatars/${avatar.filename}`;
+    avatarUrl = await uploadImage(avatar.buffer, "feriyo/users/avatars");
   }
 
   const [updatedUser] = await db
